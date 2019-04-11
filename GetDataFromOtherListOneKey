@@ -1,0 +1,35 @@
+Sub GetData(ByVal SourseList As String, ByVal SourseColName1 As String, ByVal SourseColName2 As String, ByVal SourseRowNumb As Long, ByVal DestColName1 As String, ByVal DestColName2 As String, ByVal DestRowNumb As Long)
+
+With Worksheets(SourseList)
+    SourseColNumb1 = .Range(SourseRowNumb & ":" & SourseRowNumb).Find(SourseColName1, , , xlWhole).Column
+    SourseColNumb2 = .Range(SourseRowNumb & ":" & SourseRowNumb).Find(SourseColName2, , , xlWhole).Column
+    SourseRowsCount = .Range(.Cells(SourseRowNumb, SourseColNumb1), .Cells(1048576, SourseColNumb1)).Find("", , , xlWhole).Row - 1
+    SourseArray1 = .Range(.Cells(SourseRowNumb + 1, SourseColNumb1), .Cells(SourseRowsCount, SourseColNumb1))
+    SourseArray2 = .Range(.Cells(SourseRowNumb + 1, SourseColNumb2), .Cells(SourseRowsCount, SourseColNumb2))
+End With
+
+With CreateObject("scripting.dictionary"): .comparemode = 1
+
+    For i = LBound(SourseArray1) To UBound(SourseArray1)
+        .Item("!!!" & CStr(SourseArray1(i, 1))) = CStr(SourseArray2(i, 1))
+    Next i
+    
+    DestColNumb1 = Range(DestRowNumb & ":" & DestRowNumb).Find(DestColName1, , , xlWhole).Column
+    DestColNumb2 = Range(DestRowNumb & ":" & DestRowNumb).Find(DestColName2, , , xlWhole).Column
+    DestRowsCount = Range(Cells(DestRowNumb, DestColNumb1), Cells(1048576, DestColNumb1)).Find("", , , xlWhole).Row - 1
+    DestArray1 = Range(Cells(DestRowNumb + 1, DestColNumb1), Cells(DestRowsCount, DestColNumb1))
+    DestArray2 = Range(Cells(DestRowNumb + 1, DestColNumb2), Cells(DestRowsCount, DestColNumb2))
+    
+    For i = LBound(DestArray1) To UBound(DestArray1)
+        If .exists("!!!" & CStr(DestArray1(i, 1))) Then DestArray2(i, 1) = .Item("!!!" & CStr(DestArray1(i, 1)))
+    Next i
+    
+    .RemoveAll
+    
+End With
+
+Range(Cells(DestRowNumb + 1, DestColNumb2), Cells(DestRowsCount, DestColNumb2)) = DestArray2
+
+Erase SourseArray1, SourseArray2, DestArray1, DestArray2
+
+End Sub
