@@ -1,5 +1,5 @@
 Sub GetData(ByVal SourseList As String, ByVal SourseColName1 As String, ByVal SourseColName2 As String, ByVal SourseRowNumb As Long, ByVal DestColName1 As String, ByVal DestColName2 As String, ByVal DestRowNumb As Long)
-
+'Скрипт получения данных с другого листа по простому ключу
 With Worksheets(SourseList)
     SourseColNumb1 = .Range(SourseRowNumb & ":" & SourseRowNumb).Find(SourseColName1, , , xlWhole).Column
     SourseColNumb2 = .Range(SourseRowNumb & ":" & SourseRowNumb).Find(SourseColName2, , , xlWhole).Column
