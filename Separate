@@ -12,6 +12,10 @@ public sub Separate()
 ' Вычисляем остаток
 Остаток = Количество - Часть * Частей
 ' Помещаем данные в массив
-Массив = Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(ПоСтрока, ActiveCell.Column))
+Массив = Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(ПоСтрока, ActiveCell.Column)
+Dim y as Long
+' Перебираем элементы массива
+for i = 1 to Количество 
 
+next i
 end sub
