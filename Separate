@@ -25,10 +25,19 @@ for i = 1 to Количество
     Результат(y, 1) = Массив(i, 1)
     y = y + 1
     if y = Часть then
-        Range(Cells(ActiveCell.Row, ActiveCell.Column + j), Cells(ActiveCell.Row + y, ActiveCell.Column + j)) = Результат 
+        Range(Cells(ActiveCell.Row, ActiveCell.Column + j + 1), Cells(ActiveCell.Row + y, ActiveCell.Column + j + 1)) = Результат 
         j = j + 1
         ReDim Результат(Часть, 1) 
         y = 1
     end if
+    if Остаток > 0
+    if j = Частей and y = Остаток then
+        Range(Cells(ActiveCell.Row, ActiveCell.Column + j + 2), Cells(ActiveCell.Row + Остаток, ActiveCell.Column + j + 2)) = Результат 
+        Erase Массив, Результат 
+        Msgbox("Разделено на " & Частей + 1 & ", по " & Часть & "/" & Остаток & " элементов в каждом")
+        Exit sub
+    end if
+    end if
 next i
+Msgbox("Разделено на " & Частей & ", по " & Часть & " элементов в каждом") 
 end sub
