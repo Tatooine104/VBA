@@ -13,9 +13,22 @@ public sub Separate()
 Остаток = Количество - Часть * Частей
 ' Помещаем данные в массив
 Массив = Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(ПоСтрока, ActiveCell.Column)
-Dim y as Long
+' Создаем массив для вставки данных
+Dim Результат(Часть, 1) as string
+' Переменная чтобы хранить значение для массива вставки и отсчет частей
+Dim y as Long, j as long
+' Присваеваем начальное значение 
+y = 1
+j = 1
 ' Перебираем элементы массива
 for i = 1 to Количество 
-
+    Результат(y, 1) = Массив(i, 1)
+    y = y + 1
+    if y = Часть then
+        Range(Cells(ActiveCell.Row, ActiveCell.Column + j), Cells(ActiveCell.Row + y, ActiveCell.Column + j)) = Результат 
+        j = j + 1
+        ReDim Результат(Часть, 1) 
+        y = 1
+    end if
 next i
 end sub
