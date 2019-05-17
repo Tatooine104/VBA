@@ -24,12 +24,19 @@ y = 1
 j = 1
 ' Перебираем элементы массива
 for i = 1 to Количество 
+    ' присваеваем значение из Массив в Результат
     Результат(y, 1) = Массив(i, 1)
+    ' увеличиваем значение переменной 
     y = y + 1
+    ' Когда количество переданных в Результат 
     if y = Часть then
-        Range(Cells(ActiveCell.Row, ActiveCell.Column + j + 1), Cells(ActiveCell.Row + y, ActiveCell.Column + j + 1)) = Результат 
+        ' Вставляем данные на лист
+        Range(Cells(ActiveCell.Row, ActiveCell.Column + j + 1), Cells(ActiveCell.Row + y, ActiveCell.Column + j + 1)) = Результат
+        ' Увеличиваем отстет количества Части
         j = j + 1
+        ' Очищаем Результат 
         ReDim Результат(Часть, 1) 
+        ' 
         y = 1
     end if
     if Остаток > 0
