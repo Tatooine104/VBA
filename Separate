@@ -1,59 +1,43 @@
-public sub Separate()
-' Ищем последнюю строку
-ПосСтрока = Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(1048765, ActiveCell.Column)).Fond("").Row - 1
-' Определяем количество элементов 
-Количество = ПосСтрока - ActiveCell.Row
-' Получаем от юзера значение максимального количества элементов в одной части
-Граница = InputBox("Укажите максимальное количество элементов")
-' Получаем количество целых частей
-Частей = Fix(Количество / Граница)
-' Получаем количество элементов в одной части
-Часть = Fix(Количество / Частей)
-' Вычисляем остаток
-Остаток = Количество - Часть * Частей
-' Помещаем данные в массив
-Массив = Range(Cells(ActiveCell.Row, ActiveCell.Column), Cells(ПоСтрока, ActiveCell.Column)
-' Создаем массив для вставки данных
-Dim Результат(Часть, 1) as string
-' Переменная чтобы хранить значение для массива вставки и отсчет частей
-Dim y as Long
-' Счетчик частей
-Dim j as long
-' Присваеваем начальное значение 
-y = 1
-j = 1
-' Перебираем элементы массива
-for i = 1 to Количество 
-    ' присваеваем значение из Массив в Результат
-    Результат(y, 1) = Массив(i, 1)
-    ' увеличиваем значение переменной 
-    y = y + 1
-    ' Когда количество переданных в Результат 
-    if y = Часть then
-        ' Вставляем данные на лист
-        Range(Cells(ActiveCell.Row, ActiveCell.Column + j + 1), Cells(ActiveCell.Row + y, ActiveCell.Column + j + 1)) = Результат
-        ' Увеличиваем отстет количества Части
-        j = j + 1
-        ' Очищаем Результат 
-        ReDim Результат(Часть, 1) 
-        ' Возвращаем переменной начальное значение 
-        y = 1
-    end if
-    ' Обработка остатка
-    if Остаток > 0
-        ' Проверяем что обработали все части без остатка
-        if j = Частей and y = Остаток then
-            ' Вставляем Результат на лист
-            Range(Cells(ActiveCell.Row, ActiveCell.Column + j + 2), Cells(ActiveCell.Row + Остаток, ActiveCell.Column + j + 2)) = Результат 
-            ' Стираем массивы
-            Erase Массив, Результат 
-            ' Выводим отчет о проделанной работе
-            Msgbox("Разделено на " & Частей + 1 & ", по " & Часть & "/" & Остаток & " элементов в каждом")
-            ' Воходим из процедуры
-            Exit sub
-        end if
-    end if
-next i
-' Выводим отчёт о проделанной работе 
-Msgbox("Разделено на " & Частей & ", по " & Часть & " элементов в каждом") 
-end sub
+Public Sub separate2()
+
+Application.ScreenUpdating = False
+
+Dim r As Long, c As Long, cou As Long, incol As Long, col As Long, val As Long, del As Long, delc As Long
+
+delc = 0
+r = ActiveCell.Row
+c = ActiveCell.Column
+incol = Application.InputBox(prompt:="Укажите максимальный размер столбцов", Title:="Разбивка на столбцы", Type:=1)
+If incol = o Then Exit Sub
+Range(Selection, Selection.End(xlDown)).Select
+cou = Selection.Rows.Count
+col = WorksheetFunction.RoundUp(cou / incol, 0)
+val = Int(cou / col)
+del = cou - val * col
+
+Do
+
+If Cells(ActiveCell.Row + val, ActiveCell.Column) <> "" Then
+    r = ActiveCell.Row
+    c = ActiveCell.Column
+
+    If delc < del Then
+        Application.GoTo Reference:="R" & r + val + 1 & "C" & c
+    Else
+        Application.GoTo Reference:="R" & r + val & "C" & c
+    End If
+    
+    If Cells(ActiveCell.Row + 1, ActiveCell.Column) <> "" Then Range(Selection, Selection.End(xlDown)).Select
+    
+    Selection.Cut
+    Cells(r, c + 1).Select
+    ActiveSheet.Paste
+    delc = delc + 1
+    
+End If
+
+Loop Until Cells(r + val, c + 1) = ""
+
+Application.ScreenUpdating = True
+
+End Sub
