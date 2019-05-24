@@ -1,10 +1,10 @@
 Public Sub ReportProcNames()
 
 CheckFileName = Left(Right(Application.VBE.ActiveVBProject.FileName, InStr(StrReverse(Application.VBE.ActiveVBProject.FileName), "\") - 1), InStr(Right(Application.VBE.ActiveVBProject.FileName, InStr(StrReverse(Application.VBE.ActiveVBProject.FileName), "\") - 1), ".") - 1)
-FileName = Environ("HOMEDRIVE") & Environ("HOMEPATH") & "\Desktop\VBA Code Report\" & CheckFileName & " Структура.txt"
+FileName = Environ("HOMEDRIVE") & Environ("HOMEPATH") & "\Desktop\VBA Code Report\" & CheckFileName & " Ñòðóêòóðà.txt"
 If Not Len(Dir(FileName)) = 0 Then Kill FileName
 
-txt = "Модуль" & vbTab & "Тип" & vbTab & "Процедура" & vbTab & "Модификатор" & vbTab & "Тип процедуры" & vbTab & "Строк кода" & vbTab & "Описание" & vbTab & "№ строки" & vbTab & "Структура" & vbTab & "№ строки" & vbTab & "Формула"
+txt = "Ìîäóëü" & vbTab & "Òèï" & vbTab & "Ïðîöåäóðà" & vbTab & "Ìîäèôèêàòîð" & vbTab & "Òèï ïðîöåäóðû" & vbTab & "Ñòðîê êîäà" & vbTab & "Îïèñàíèå" & vbTab & "¹ ñòðîêè" & vbTab & "Ñòðóêòóðà" & vbTab & "¹ ñòðîêè" & vbTab & "Ôîðìóëà"
 Set FSO = CreateObject("scripting.filesystemobject")
 Set ts = FSO.CreateTextFile(FileName, True): ts.Close
 Set ts = FSO.OpenTextFile(FileName, 8, True): ts.Write txt: ts.Close
@@ -66,6 +66,7 @@ For Each Component In Application.VBE.ActiveVBProject.VBComponents
                         End If
                         formulaD = Trim(formulaA(1) & " = " & Mid(formulaC(0), 2, Len(formulaC(0))))
                         formulaD = Trim(Replace(Replace(Replace(formulaD, "Then", ""), "'", ""), "  ", " "))
+                        If Right(formulaD, 2) = " )" Then formulaD = Left(formulaD, Len(formulaD) - 2)
                         finally = finally & vbNewLine & BlockName & vbTab & BlockType & vbTab & ScriptName & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & i & vbTab & formulaD
                     End If
                 End If
@@ -96,6 +97,5 @@ Function ComponentTypeToString(ComponentType As Integer) As String
             ComponentTypeToString = "Unknown Type: " & CStr(ComponentType)
     End Select
 End Function
-
 
 
