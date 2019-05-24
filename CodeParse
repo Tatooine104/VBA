@@ -1,0 +1,101 @@
+Public Sub ReportProcNames()
+
+CheckFileName = Left(Right(Application.VBE.ActiveVBProject.FileName, InStr(StrReverse(Application.VBE.ActiveVBProject.FileName), "\") - 1), InStr(Right(Application.VBE.ActiveVBProject.FileName, InStr(StrReverse(Application.VBE.ActiveVBProject.FileName), "\") - 1), ".") - 1)
+FileName = Environ("HOMEDRIVE") & Environ("HOMEPATH") & "\Desktop\VBA Code Report\" & CheckFileName & " Структура.txt"
+If Not Len(Dir(FileName)) = 0 Then Kill FileName
+
+txt = "Модуль" & vbTab & "Тип" & vbTab & "Процедура" & vbTab & "Модификатор" & vbTab & "Тип процедуры" & vbTab & "Строк кода" & vbTab & "Описание" & vbTab & "№ строки" & vbTab & "Структура" & vbTab & "№ строки" & vbTab & "Формула"
+Set FSO = CreateObject("scripting.filesystemobject")
+Set ts = FSO.CreateTextFile(FileName, True): ts.Close
+Set ts = FSO.OpenTextFile(FileName, 8, True): ts.Write txt: ts.Close
+Set ts = Nothing: Set FSO = Nothing
+
+Dim Component As Object
+Dim finally As String
+finally = ""
+For Each Component In Application.VBE.ActiveVBProject.VBComponents
+    If Component.Name <> "VBACodeParse" Then
+        Comp = Component.Name
+        LinesStart = Component.Codemodule.CountOfDeclarationLines + 1
+        LinesCount = Component.Codemodule.CountOfLines
+        If LinesCount > 0 Then
+            For i = LinesStart To LinesCount
+                BlockName = Component.Name
+                BlockType = ComponentTypeToString(Component.Type)
+                ScriptName = Component.Codemodule.ProcOfLine(i, 0)
+                ScriptStartLine = Component.Codemodule.ProcBodyLine(ScriptName, Kind)
+                ScriptLinesCount = Component.Codemodule.ProcCountLines(ScriptName, 0)
+                StringVal = Component.Codemodule.Lines(i, 1)
+                StringVal1 = Component.Codemodule.Lines(i + 1, 1)
+                If (InStr(StringVal, "Sub") > 0 Or InStr(StringVal, "Function") > 0) And InStr(StringVal, "End") = 0 And InStr(StringVal, "Exit") = 0 Then
+                    FL = Split(StringVal, " ")
+                    If FL(0) <> "Sub" And FL(0) <> "Function" Then
+                        Modef = FL(0)
+                        Typee = FL(1)
+                    Else
+                        Modef = ""
+                        Typee = FL(0)
+                    End If
+                End If
+                
+                If InStr(StringVal1, "<summary>") > 0 Then ScriptInfo = Trim(Replace(Replace(StringVal1, "' <summary>", ""), "</summary>", ""))
+                
+                If ScriptStartLine = i Then
+                    finally = finally & vbNewLine & BlockName & vbTab & BlockType & vbTab & ScriptName & vbTab & Modef & vbTab & Typee & vbTab & ScriptLinesCount & vbTab & ScriptInfo & vbTab & " " & vbTab & " " & vbTab & " "
+                End If
+                
+                If InStr(StringVal, "<codebloc>") > 0 Then
+                    codebloc = Trim(Replace(Replace(StringVal, "' <codebloc>", ""), "</codebloc>", ""))
+                    finally = finally & vbNewLine & BlockName & vbTab & BlockType & vbTab & ScriptName & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & i & vbTab & codebloc & vbTab & " "
+                End If
+                
+                If InStr(StringVal, "<F>") > 0 Then
+                    formulaA = Split(StringVal, "<F>")
+                    'Stop
+                    If InStr(formulaA(0), ".Item") > 0 Then formulaB = Split(formulaA(0), ".Item")
+                    If InStr(formulaA(0), ".exists") > 0 And InStr(formulaA(0), ".Item") > 0 Then formulaB = Split(formulaA(0), ".Item")
+                    If InStr(formulaA(0), ".exists") > 0 And InStr(formulaA(0), ".Item") = 0 Then formulaB = Split(formulaA(0), ".exists")
+                    formulaC = Split(formulaB(1), "=")
+                    If Not formulaA(1) = "" Then
+                        If Not formulaA(2) = "" Then
+                            formulaF = Split(formulaA(2), "; ")
+                            For k = LBound(formulaF) To UBound(formulaF)
+                                formulaE = Split(formulaF(k), "=")
+                                formulaC(0) = Trim(Replace(formulaC(0), Trim(formulaE(0)), formulaE(1) & " "))
+                            Next k
+                        End If
+                        formulaD = Trim(formulaA(1) & " = " & Mid(formulaC(0), 2, Len(formulaC(0))))
+                        formulaD = Trim(Replace(Replace(Replace(formulaD, "Then", ""), "'", ""), "  ", " "))
+                        finally = finally & vbNewLine & BlockName & vbTab & BlockType & vbTab & ScriptName & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & " " & vbTab & i & vbTab & formulaD
+                    End If
+                End If
+                
+            Next i
+        End If
+    End If
+Next Component
+Set FSO = CreateObject("scripting.filesystemobject")
+Set ts = FSO.OpenTextFile(FileName, 8, True): ts.Write finally: ts.Close
+Set ts = Nothing: Set FSO = Nothing
+End Sub
+Function ComponentTypeToString(ComponentType As Integer) As String
+    Select Case ComponentType
+        Case vbext_ct_ActiveXDesigner
+            ComponentTypeToString = "ActiveX Designer"
+        Case vbext_ct_ClassModule
+            ComponentTypeToString = "Class Module"
+        Case vbext_ct_Document
+            ComponentTypeToString = "Document Module"
+        Case 3
+            ComponentTypeToString = "UserForm"
+        Case 1
+            ComponentTypeToString = "Code Module"
+        Case 100
+            ComponentTypeToString = "WorkSheet"
+        Case Else
+            ComponentTypeToString = "Unknown Type: " & CStr(ComponentType)
+    End Select
+End Function
+
+
+
