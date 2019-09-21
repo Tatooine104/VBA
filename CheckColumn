@@ -1,0 +1,21 @@
+Public Sub CheckColumn(ByVal text As String, Optional wSheet As Worksheet, Optional ByVal nRow As Long)
+' <summary> Проверка колонки. Если существует - очистка, если нет, то создается </summary>
+' Присваеваем значение по умолчанию для необязательных параметров
+If nRow = 0 Then nRow = 1
+If wSheet Is Nothing Then Set wSheet = ActiveSheet
+' Проверяем существует ли нужная колонка
+If Not wSheet.Range(nRow & ":" & nRow).Find(text, , , xlWhole) Is Nothing Then
+    ' Очищаем колонку
+    wSheet.Range(nRow & ":" & nRow).Find(text, , , xlWhole).EntireColumn.ClearContents
+    ' Создаем колонку
+    wSheet.Cells(nRow, wSheet.Range(nRow & ":" & nRow).Find("").Column).Value = text
+Else
+    ' Создаем колонку
+    wSheet.Cells(nRow, wSheet.Range(nRow & ":" & nRow).Find("").Column).Value = text
+End If
+
+End Sub
+
+Sub test()
+Call CheckColumn("Test")
+End Sub
