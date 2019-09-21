@@ -15,7 +15,3 @@ Else
 End If
 
 End Sub
-
-Sub test()
-Call CheckColumn("Test")
-End Sub
