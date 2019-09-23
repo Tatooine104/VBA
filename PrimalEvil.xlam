@@ -1,0 +1,774 @@
+' Глобальные переменные
+Private ScriptName As String
+Public unicdata, unicdatac
+
+
+Private Sub SendToLog(ByVal ModuleName As String, ByVal script As String, ByVal ErrorDesription As String)
+' <summary> Логирование ошибок </summary>
+txt = vbNewLine & Now & vbTab & Environ("UserName") & vbTab & Environ("COMPUTERNAME") & vbTab & ThisWorkbook.Name & vbTab & ModuleName & vbTab & script & vbTab & ErrorDesription
+FileName = "R:\WarehouseSPB\Departments\Common\3.Отдел по управлению товарными запасами 500 мб - Боброва О.В\VBA Scripts Error Log.txt"
+If Not Len(Dir(FileName)) > 0 Then
+    FileName = Environ("HOMEDRIVE") & Environ("HOMEPATH") & "\Desktop\VBA Scripts Error Log.txt"
+    If Not Len(Dir(FileName)) > 0 Then
+    txtd = "Дата и время" & vbTab & "Пользователь" & vbTab & "Компьютер" & vbTab & "Файл" & vbTab & "Блок" & vbTab & "Скрипт" & vbTab & "Ошибка"
+        Set FSO = CreateObject("scripting.filesystemobject")
+        Set ts = FSO.CreateTextFile(FileName, True): ts.Close
+        Set ts = FSO.OpenTextFile(FileName, 8, True): ts.Write txtd: ts.Close
+        Set ts = Nothing: Set FSO = Nothing
+    Else
+        Set FSO = CreateObject("scripting.filesystemobject")
+        Set ts = FSO.OpenTextFile(FileName, 8, True): ts.Write txt: ts.Close
+        Set ts = Nothing: Set FSO = Nothing
+        Exit Sub
+    End If
+End If
+
+Set FSO = CreateObject("scripting.filesystemobject")
+Set ts = FSO.OpenTextFile(FileName, 8, True): ts.Write txt: ts.Close
+Set ts = Nothing: Set FSO = Nothing
+Application.StatusBar = txt
+End Sub
+
+Private Sub eord_check()
+' <summary> Преобразование выгрузки из EORD </summary>
+On Error GoTo errorlog
+
+'On Error Resume Next
+
+If ActiveSheet.Cells(1, 1).Value = "З-д" And _
+    ActiveSheet.Cells(1, 2).Value = "Товар" And _
+    ActiveSheet.Cells(1, 3).Value = "Действ. с" And _
+    ActiveSheet.Cells(1, 4).Value = "Действ. по" And _
+    ActiveSheet.Cells(1, 5).Value = "Поставщик" And _
+    ActiveSheet.Cells(1, 6).Value = "ППМ" And _
+    ActiveSheet.Cells(1, 7).Value = "ПП" And _
+    ActiveSheet.Cells(1, 8).Value = "Блк" And _
+    ActiveSheet.Cells(1, 9).Value = "ДатаСоздан" Then
+    ActiveSheet.Range("C:I").Delete Shift:=xlToLeft
+    ActiveSheet.Range("A:A").Delete Shift:=xlToLeft
+    ActiveSheet.Range("A:A").RemoveDuplicates Columns:=1, Header:=xlYe
+    ActiveSheet.Range("A2").Select
+    ActiveSheet.Range(Selection, Selection.End(xlDown)).Copy
+Else
+    Application.StatusBar = "Данный макрос работает только в файле выгрузки данных из SAP для проверки EORD!!!"
+    Application.Wait (Now + TimeValue("0:00:02"))
+    Application.StatusBar = False
+End If
+
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Private Sub Centered()
+' <summary> Отцентровать на листе все данные и стереть все границы </summary>
+'On Error GoTo errorlog
+
+Dim goal As Object
+
+Set goal = ActiveCell
+    ActiveSheet.Cells.Select
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .Font.Bold = False
+        '.Font.Italic = True
+        .Borders(xlDiagonalDown).LineStyle = xlNone
+        .Borders(xlDiagonalUp).LineStyle = xlNone
+        .Borders(xlEdgeLeft).LineStyle = xlNone
+        .Borders(xlEdgeTop).LineStyle = xlNone
+        .Borders(xlEdgeBottom).LineStyle = xlNone
+        .Borders(xlEdgeRight).LineStyle = xlNone
+        .Borders(xlInsideVertical).LineStyle = xlNone
+        .Borders(xlInsideHorizontal).LineStyle = xlNone
+        '.Font.Name = "Calibri"
+        .Font.Size = 11
+    End With
+    
+    goal.Select
+Application.StatusBar = "Отцентровано!"
+Exit Sub
+
+End Sub
+
+Private Sub SaveOnTableNameDate()
+' <summary> Сохраниь на рабочем столе в качестве имени датаи время </summary>
+On Error GoTo errorlog
+
+d = Day(Date)
+m = Month(Date)
+n = Year(Date)
+If m < 10 Then m = "0" & m
+If d < 10 Then d = "0" & d
+x = Hour(Now)
+y = Minute(Now)
+If x < 10 Then x = "0" & x
+If y < 10 Then y = "0" & y
+filepath = "C:\Users\" & User & "\Desktop\" & n & "." & m & "." & d & " " & x & y & ".xlsb"
+ActiveWorkbook.SaveAs FileName:=(filepath), FileFormat:=xlExcel12
+Application.StatusBar = filepath
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Private Function User() As String
+' <summary> Текущий пользователь </summary>
+User = Environ("UserName")
+
+End Function
+Private Sub Auto_Open()
+' <summary> События книги при открытии </summary>
+On Error GoTo errorlog
+
+Dim oReferences As Object, oRef As Object
+Set oReferences = ThisWorkbook.VBProject.References
+For Each oRef In oReferences
+    If oRef.Description = "OLE Automation" Then oReferences.Remove Reference:=oRef
+Next
+
+Application.AutoRecover.Enabled = False
+
+Application.OnKey "{F1}", "showhelp"
+Application.OnKey "{F3}", "ExtractUniqueData"
+Application.OnKey "{F4}", "PasteUniqueData"
+Application.OnKey "{F5}", "FilterOnSelectedValue"
+Application.OnKey "+^{v}", "paste_only_values"
+Application.OnKey "+^{c}", "SelectRangeT"
+Application.OnKey "{F6}", "FilterOffOne"
+Application.OnKey "{F7}", "FilterOnValue"
+Application.OnKey "{F8}", "FilterOffAll"
+Application.OnKey "{F9}", "FilterOnLikeValue"
+
+Application.StatusBar = "Надстройка загружена"
+
+Exit Sub
+
+errorlog:
+
+End Sub
+Sub showhelp()
+' <summary> Вызов справки </summary>
+'ForTasks.Show
+UserForm1.Show
+End Sub
+Private Sub ExtractUniqueData()
+' <summary> Вытащить уникальные значения </summary>
+On Error GoTo errorlog
+
+    Dim vItem, avArr, li As Long
+    ReDim avArr(1 To Rows.Count, 1 To 1)
+    With New Collection
+        On Error Resume Next
+        For Each vItem In Range(ActiveCell, Cells(Rows.Count, ActiveCell.Column).End(xlUp)).Value
+            .Add vItem, CStr(vItem)
+            If Err = 0 Then
+                li = li + 1: avArr(li, 1) = vItem
+                asdf = asdf & vbNewLine & vItem
+            Else: Err.Clear
+            End If
+        Next
+    End With
+    If li Then
+    unicdata = avArr
+    unicdatac = li
+        Set objClip = GetObject("New:1C3B4210-F441-11CE-B9EA-00AA006B1A69")
+        With objClip
+        .SetText asdf
+        .PutInClipboard
+        End With
+
+    End If
+Application.StatusBar = "Выбрано значений: " & li
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Private Sub PasteUniqueData()
+' <summary> Вставить вытащенные из диапазона уникальные заначения </summary>
+On Error GoTo errorlog
+
+'On Error Resume Next
+ActiveCell.Resize(unicdatac).Value = unicdata
+
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Public Sub PasteNow()
+' <summary> Вставить текущую Дату + Время </summary>
+ActiveCell.Value = Now()
+End Sub
+
+Public Sub Separate()
+' <summary> Разделить список на несколько частей </summary>
+Application.ScreenUpdating = False
+
+Dim r As Long, c As Long, cou As Long, incol As Long, col As Long, val As Long, del As Long, delc As Long
+
+delc = 0
+r = ActiveCell.Row
+c = ActiveCell.Column
+incol = Application.InputBox(prompt:="Укажите максимальный размер столбцов", Title:="Разбивка на столбцы", Type:=1)
+If incol = o Then Exit Sub
+Range(Selection, Selection.End(xlDown)).Select
+cou = Selection.Rows.Count
+col = WorksheetFunction.RoundUp(cou / incol, 0)
+val = Int(cou / col)
+del = cou - val * col
+
+Do
+
+If Cells(ActiveCell.Row + val, ActiveCell.Column) <> "" Then
+    r = ActiveCell.Row
+    c = ActiveCell.Column
+
+    If delc < del Then
+        Application.GoTo Reference:="R" & r + val + 1 & "C" & c
+    Else
+        Application.GoTo Reference:="R" & r + val & "C" & c
+    End If
+    
+    If Cells(ActiveCell.Row + 1, ActiveCell.Column) <> "" Then Range(Selection, Selection.End(xlDown)).Select
+    
+    Selection.Cut
+    Cells(r, c + 1).Select
+    ActiveSheet.Paste
+    delc = delc + 1
+    
+End If
+
+Loop Until Cells(r + val, c + 1) = ""
+
+Application.ScreenUpdating = True
+
+End Sub
+
+
+Public Sub paste_only_values()
+' <summary> Вставить только значения </summary>
+Range(ActiveCell.Address).PasteSpecial Paste:=xlPasteValues
+Application.CutCopyMode = False
+
+End Sub
+Public Sub FilterOffOne()
+' <summary> Установить фильтр по значению в активной ячейке </summary>
+
+On Error GoTo errorlog
+
+'On Error Resume Next
+ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column
+
+Exit Sub
+
+errorlog:
+
+End Sub
+Public Sub FilterOnValue()
+' <summary> Установить фильтр по значению в активной ячейке </summary>
+
+On Error GoTo errorlog
+
+'On Error Resume Next
+If TypeName(ActiveCell.Value) = "Boolean" Then
+    If ActiveCell.Value Then
+        ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column, Criteria1:="ИСТИНА"
+    Else
+        ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column, Criteria1:="ЛОЖЬ"
+    End If
+Else
+    ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column, Criteria1:=CStr(ActiveCell.Value)
+End If
+
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Public Sub FilterOnSelectedValue()
+' <summary> Установить фильтр по значению в активной ячейке </summary>
+On Error Resume Next
+
+Dim result() As String
+Dim check As String: check = ""
+Dim i As Long: i = 0
+For Each vals In Selection
+    If InStr(check, vals) = 0 Then
+        i = i + 1
+        check = check & " " & vals
+        ReDim Preserve result(1 To i)
+        result(i) = vals
+    End If
+Next vals
+
+ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column, Criteria1:=result, Operator:=xlFilterValues
+
+End Sub
+
+Public Sub FilterOnLikeValue()
+' <summary> Установить фильтр по значению в активной ячейке </summary>
+
+On Error GoTo errorlog
+
+'On Error Resume Next
+ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column, Criteria1:=CStr(ActiveCell.Value & "*")
+
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Public Sub FilterOffAll()
+' <summary> Снять все фильтра </summary>
+'On Error GoTo errorlog
+
+On Error Resume Next
+ActiveSheet.ShowAllData
+
+Exit Sub
+
+errorlog:
+
+End Sub
+Public Sub ClearAll()
+' <summary> Очистка всего что от куросра и ниже </summary>
+Rows(ActiveCell.Row).Select
+Range(Selection, Selection.End(xlDown)).Select
+Selection.Delete Shift:=xlUp
+
+End Sub
+
+Public Function Сейчас()
+' <summary> Текущая Дата + Время </summary>
+Сейчас = Now()
+End Function
+
+Private Function FileExists(ByVal FileName As String) As Boolean
+' <summary> Проверить существует ли файл </summary>
+FileExists = Len(Dir(FileName)) > 0
+End Function
+
+Public Sub SelectRangeT()
+' <summary> Выделить и копировать текущую таблицу </summary>
+On Error GoTo errorlog
+
+Range(ActiveCell, Cells(ActiveSheet.UsedRange.Rows.Count, ActiveSheet.UsedRange.Columns.Count)).Select
+Selection.Copy
+
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Public Function ВПРМУЛЬТИ(Условие As String, Таблица As Range, Поиск As Integer, Колонка As Integer)
+' <summary> ВПР нескольких значений </summary>
+ВПРМУЛЬТИ = ""
+Dim FindCell As Object
+If Таблица.Find(Условие, , xlValues) Is Nothing Then Exit Function
+Set FindCell = Таблица.Find(Условие, , xlValues, , xlByColumns)
+firstfindrow = Таблица.Find(Условие, , xlValues, , xlByColumns).Row
+If Таблица(FindCell.Row, Поиск).Value = Условие Then ВПРМУЛЬТИ = Таблица(FindCell.Row, Колонка).Value
+Do
+    If Таблица.Find(Условие, FindCell, xlValues).Row = firstfindrow Then Exit Do
+    Set FindCell = Таблица.Find(Условие, FindCell, xlValues, , xlByColumns)
+    If Таблица(FindCell.Row, Поиск).Value = Условие Then
+        ВПРМУЛЬТИ = ВПРМУЛЬТИ & "; " & Таблица(FindCell.Row, Колонка).Value
+    End If
+Loop
+End Function
+Public Sub FunctionDescription()
+Application.MacroOptions _
+    Macro:="tknumfull", _
+    Description:="Добавляет в номер ТК нули", _
+    Category:="Разное", _
+    ArgumentDescriptions:=Array("Номер ТК")
+End Sub
+Public Function tknumfull(НомерТК As String)
+' <summary> Сделать номер тк и 4 символов </summary>
+' Добавить нули в номер тк
+tknumfull = НомерТК
+' Присвоить занчение
+If Len(НомерТК) < 4 Then
+' Проверка количество символов
+    For i = 1 To 4 - Len(НомерТК)
+    ' Инициализация циклa
+        tknumfull = "0" & tknumfull
+        ' Добавление нулей
+    Next
+End If
+End Function
+Public Function Xsymbols(val As String, x As Integer)
+' <summary> Добавить любое количество нулей в значение </summary>
+Xsymbols = val
+' Присвоить значение
+If Len(val) < x Then
+' Проверка количество символов
+    For i = 1 To x - Len(val)
+    ' Инициализация циклa
+        Xsymbols = "0" & Xsymbols
+        'Добавление нулей
+    Next
+End If
+End Function
+
+Public Sub GetRightPSP()
+' <summary> Скорректировать псп в шаблоне кд в плюс </summary>
+If ActiveSheet.Name = "Основной лист" Then
+    a1 = Range("AD4:AG" & ActiveSheet.UsedRange.Rows.Count)
+    For i = 1 To UBound(a1)
+        If Not CStr(a1(i, 4)) Like "*" & Weekday(Date, vbMonday) & "*" Then
+            If Weekday(Date, vbMonday) = 1 Then
+                a1(i, 1) = a1(i, 1) + 3
+            Else
+                a1(i, 1) = a1(i, 1) + 1
+            End If
+        End If
+    Next
+    Range("AD4:AG" & ActiveSheet.UsedRange.Rows.Count) = a1
+End If
+End Sub
+
+Public Sub GetRightPSPV()
+' <summary> Скорректировать ПСп в шаблоне КД в минус </summary>
+If ActiveSheet.Name = "Основной лист" Then
+    a1 = Range("AD4:AG" & ActiveSheet.UsedRange.Rows.Count)
+    For i = 1 To UBound(a1)
+        If Not CStr(a1(i, 4)) Like "*" & Weekday(Date, vbMonday) & "*" Then
+            If Weekday(Date, vbMonday) = 1 Then
+                a1(i, 1) = a1(i, 1) - 3
+            Else
+                a1(i, 1) = a1(i, 1) - 1
+            End If
+        End If
+    Next
+    Range("AD4:AG" & ActiveSheet.UsedRange.Rows.Count) = a1
+End If
+End Sub
+
+'Function sortarray(fuck As String)
+'' <summary> Отсортировать массив </summary>
+'nx = UBound(fuck, 1)
+'  For ix = 0 To nx - 1
+'      For jx = ix + 1 To nx
+'           If fuck(jx) < fuck(ix) Then
+'              Tmpx = fuck(ix)
+'              fuck(ix) = fuck(jx)
+'              fuck(jx) = Tmpx
+'           End If
+'        Next jx
+'  Next ix
+'End Function
+
+
+Public Sub orderslist()
+' <summary> Преобразовать лист в шабоне КД </summary>
+Range("O4").Select
+ActiveWindow.FreezePanes = True
+Range("B:B,K:K,CL:CL,CQ:CQ").ColumnWidth = 10.29
+Range("C:C").ColumnWidth = 11.57
+Range("D:E,AD:AE,AG:AG,AO:AO,AQ:AU,AW:AX,CH:CJ,CR:CT,CM:CM,CU:CU,DI:DM").ColumnWidth = 5
+Range("J:J,Z:Z,CB:CB,DA:DA,DD:DH").ColumnWidth = 6
+Range("M:N,T:T").ColumnWidth = 4
+Range("DQ:DQ").ColumnWidth = 15
+Range("AI:AM").ColumnWidth = 7
+Range("G:G,AA:AA,DZ:DZ").HorizontalAlignment = xlLeft
+Range("G3,AA3").HorizontalAlignment = xlCenter
+Columns("L:L").NumberFormat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
+Columns("BV:BZ").NumberFormat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
+End Sub
+
+Function NoDups(rng As Range)
+' <summary> Из диапазона вытащить уникальные значения </summary>
+
+  Dim arr(), i&, s$, x
+  arr = Intersect(rng.Parent.UsedRange, rng).Value
+  On Error Resume Next
+  With New Collection
+    For Each x In arr()
+      s = Trim(x)
+      If Len(s) > 0 Then
+        If IsEmpty(.Item(s)) Then
+          For i = 1 To .Count
+            If s < .Item(i) Then Exit For
+          Next
+            If i > .Count Then .Add s, s Else .Add s, s, Before:=i
+        End If
+      End If
+    Next
+    ReDim arr(1 To .Count)
+    For i = 1 To .Count
+      arr(i) = .Item(i)
+    Next
+  End With
+  NoDups = arr()
+
+End Function
+
+
+Public Sub SaveName()
+' <summary> Сохранить на рабочем столе под определенным именем </summary>
+On Error GoTo errorlog
+kkk = "C:\Users\" & User & "\Desktop\" & InputBox("Введите имя файла") & ".xlsb"
+ActiveWorkbook.SaveAs FileName:=(kkk), FileFormat:=xlExcel12
+Application.StatusBar = kkk
+Exit Sub
+
+errorlog:
+
+End Sub
+Private Sub BookName()
+' <summary> вписать в текущую ячейку имя книги </summary>
+ActiveCell.Value = ActiveWorkbook.Name
+End Sub
+
+Public Function CycleBCalc(NeedDate As Date)
+' <summary> Обработка циклов "В" </summary>
+CycleBCalc = "B" & Weekday(NeedDate, vbMonday) & Replace(Replace(WorksheetFunction.IsEven(WorksheetFunction.WeekNum(NeedDate, 21)), True, 2), False, 1)
+End Function
+
+
+Private Sub newcolumns(text As String)
+' <summary> Создать колонку </summary>
+On Error GoTo errorlog
+
+If Range("1:1").Find(text, , , xlWhole) Is Nothing Then
+    Cells(1, Range("1:1").Find("").Column).Value = text
+Else
+    Range("1:1").Find(text, , , xlWhole).EntireColumn.ClearContents
+    Cells(1, Range("1:1").Find("", , , xlWhole).Column).Value = text
+End If
+
+Exit Sub
+
+errorlog:
+
+End Sub
+Public Function txxt(text As String)
+' <summary> Преобразовать значение в текст </summary>
+txxt = CStr(text)
+End Function
+
+Sub VPRMULTI()
+On Error GoTo errorlog
+' <summary> запуск скрипта GetDataFromOtherList1 </summary>
+Call GetDataFromOtherList1(InputBox("Введите название листа с которого нужно потянуть данные"), InputBox("Введите название колонки с ключом"), InputBox("Введите название колонки с данными"), InputBox("Введите номер строки с шапкой"), InputBox("Введите название колонки с ключами"), ActiveCell.Offset(-1, 0), ActiveCell.Row - 1)
+
+Exit Sub
+
+errorlog:
+
+End Sub
+Sub GetDataFromOtherList1(ByVal SourseList As String, ByVal SourseColName1 As String, ByVal SourseColName2 As String, ByVal SourseRowNumb As Long, ByVal DestColName1 As String, ByVal DestColName2 As String, ByVal DestRowNumb As Long)
+' <summary> Скрипт переноса данных на активный лист с другого листа по простому ключу </summary>
+On Error GoTo errorlog
+' <codebloc> Берем данные с листа источника </codebloc>
+With Worksheets(SourseList)
+    SourseColNumb1 = .Range(SourseRowNumb & ":" & SourseRowNumb).Find(SourseColName1, , , xlWhole).Column
+    SourseColNumb2 = .Range(SourseRowNumb & ":" & SourseRowNumb).Find(SourseColName2, , , xlWhole).Column
+    SourseRowsCount = .Range(.Cells(SourseRowNumb, SourseColNumb1), .Cells(1048576, SourseColNumb1)).Find("", , , xlWhole).Row - 1
+    SourseArray1 = .Range(.Cells(SourseRowNumb + 1, SourseColNumb1), .Cells(SourseRowsCount, SourseColNumb1))
+    SourseArray2 = .Range(.Cells(SourseRowNumb + 1, SourseColNumb2), .Cells(SourseRowsCount, SourseColNumb2))
+End With
+
+' <codebloc> Отправляем данные из источника в словарь </codebloc>
+With CreateObject("scripting.dictionary"): .CompareMode = 1
+    For i = LBound(SourseArray1) To UBound(SourseArray1)
+        If Not .exists("!!!" & CStr(SourseArray1(i, 1))) Then
+            .Item("!!!" & CStr(SourseArray1(i, 1))) = CStr(SourseArray2(i, 1))
+        Else
+            If InStr(.Item("!!!" & CStr(SourseArray1(i, 1))), CStr(SourseArray2(i, 1))) = 0 Then .Item("!!!" & CStr(SourseArray1(i, 1))) = .Item("!!!" & CStr(SourseArray1(i, 1))) & "; " & CStr(SourseArray2(i, 1))
+        End If
+    Next i
+' <codebloc> Берем данные с листа места назначения </codebloc>
+    DestColNumb1 = Range(DestRowNumb & ":" & DestRowNumb).Find(DestColName1, , , xlWhole).Column
+    DestColNumb2 = Range(DestRowNumb & ":" & DestRowNumb).Find(DestColName2, , , xlWhole).Column
+    DestRowsCount = Range(Cells(DestRowNumb, DestColNumb1), Cells(1048576, DestColNumb1)).Find("", , , xlWhole).Row - 1
+    DestArray1 = Range(Cells(DestRowNumb + 1, DestColNumb1), Cells(DestRowsCount, DestColNumb1))
+    DestArray2 = Range(Cells(DestRowNumb + 1, DestColNumb2), Cells(DestRowsCount, DestColNumb2))
+' <codebloc> Извлекам данные из словоря </codebloc>
+    For i = LBound(DestArray1) To UBound(DestArray1)
+        If .exists("!!!" & CStr(DestArray1(i, 1))) Then DestArray2(i, 1) = .Item("!!!" & CStr(DestArray1(i, 1)))
+    Next i
+    
+' Стираем словарь
+    .RemoveAll
+    
+End With
+
+' <codebloc> Вставляем данные на лист </codebloc>
+Range(Cells(DestRowNumb + 1, DestColNumb2), Cells(DestRowsCount, DestColNumb2)) = DestArray2
+
+' Стираем массив
+Erase SourseArray1, SourseArray2, DestArray1, DestArray2
+
+Exit Sub
+
+errorlog:
+
+End Sub
+
+Private Function GetUniqueValues(ByVal rng As Range)
+' Создаем словарь
+Set dict = CreateObject("Scripting.Dictionary"): dict.CompareMode = 1
+' Перебираем диапазон значений
+For Each vals In rng
+    ' Если значение не пусто и такого ключа нет в словаре то отправляем в словарь
+    If vals <> "" Then dict.Item(CStr(vals)) = CStr(vals)
+Next
+' Инициализируем массив
+ReDim Tarr(1 To dict.Count) As String
+' Счетчик
+i& = 1
+' Перебираем ключи и отправляем значения в массив
+For Each reyss In dict.Keys
+    ' Присваеваем массиву значение
+    Tarr(i) = reyss
+    ' Увеличиваем счетчик
+    i = i + 1
+Next
+' Сортировка массива
+If UBound(Tarr) > 1 Then
+    ' Инициируем цикл
+    For i = LBound(Tarr) To UBound(Tarr)
+        ' Инициируем цикл
+        For y = LBound(Tarr) To UBound(Tarr)
+            ' Если дошли до конца
+            If y = UBound(Tarr) Then Exit For
+            ' Сравниваем значения
+            If Tarr(y) > Tarr(y + 1) Then
+                ' создаем временное значение для обмена
+                temp = Tarr(y + 1)
+                ' Меняем значения местами
+                Tarr(y + 1) = Tarr(y)
+                ' Присваеваем значение из переменной
+                Tarr(y) = temp
+            End If
+        Next y
+    Next i
+End If
+GetUniqueValues = Tarr
+Erase Tarr
+dict.RemoveAll
+
+End Function
+
+Sub DateCalcShow()
+DateCalc.Show
+End Sub
+
+
+Sub DateCalcHead()
+Columns("B:D").ColumnWidth = 4.67
+Range("A:A,E:H,M:R").ColumnWidth = 10.78
+Columns("J:L").ColumnWidth = 4.11
+Rows("1:1").RowHeight = 85
+Rows("1:1").RowHeight = 85
+Range("A1:T1").Select
+With Selection
+    .HorizontalAlignment = xlCenter
+    .VerticalAlignment = xlCenter
+    .WrapText = True
+    .Orientation = 0
+    .AddIndent = False
+    .IndentLevel = 0
+    .ShrinkToFit = False
+    .ReadingOrder = xlContext
+    .MergeCells = False
+End With
+With Selection.Font
+    .Color = RGB(255, 255, 255)
+    .TintAndShade = 0
+End With
+With Selection.Interior
+    .Pattern = xlSolid
+    .PatternColorIndex = xlAutomatic
+    .Color = 13395456
+    .TintAndShade = 0
+    .PatternTintAndShade = 0
+End With
+Cells.Select
+Selection.HorizontalAlignment = xlCenter
+Selection.VerticalAlignment = xlCenter
+Selection.Borders(xlDiagonalDown).LineStyle = xlNone
+Selection.Borders(xlDiagonalUp).LineStyle = xlNone
+With Selection.Borders(xlEdgeLeft)
+    .LineStyle = xlContinuous
+    .Color = -5066062
+    .TintAndShade = 0
+    .Weight = xlThin
+End With
+With Selection.Borders(xlEdgeTop)
+    .LineStyle = xlContinuous
+    .Color = -5066062
+    .TintAndShade = 0
+    .Weight = xlThin
+End With
+With Selection.Borders(xlEdgeBottom)
+    .LineStyle = xlContinuous
+    .Color = -5066062
+    .TintAndShade = 0
+    .Weight = xlThin
+End With
+With Selection.Borders(xlEdgeRight)
+    .LineStyle = xlContinuous
+    .Color = -5066062
+    .TintAndShade = 0
+    .Weight = xlThin
+End With
+With Selection.Borders(xlInsideVertical)
+    .LineStyle = xlContinuous
+    .Color = -5066062
+    .TintAndShade = 0
+    .Weight = xlThin
+End With
+With Selection.Borders(xlInsideHorizontal)
+    .LineStyle = xlContinuous
+    .Color = -5066062
+    .TintAndShade = 0
+    .Weight = xlThin
+End With
+End Sub
+
+Sub ConverToText()
+On Error Resume Next
+temp = Selection
+For i = LBound(temp, 2) To UBound(temp, 2)
+    For y = LBound(temp, 1) To UBound(temp, 1)
+        temp(y, i) = CStr(temp(y, i))
+    Next y
+Next i
+Selection.NumberFormat = "@"
+Selection = temp
+End Sub
+
+Sub ConverToNumber()
+On Error Resume Next
+temp = Selection
+For i = LBound(temp, 2) To UBound(temp, 2)
+    For y = LBound(temp, 1) To UBound(temp, 1)
+        temp(y, i) = CLng(temp(y, i))
+    Next y
+Next i
+Selection.NumberFormat = "0"
+Selection = temp
+End Sub
+Sub ConverToDate()
+On Error Resume Next
+temp = Selection
+For i = LBound(temp, 2) To UBound(temp, 2)
+    For y = LBound(temp, 1) To UBound(temp, 1)
+        If temp(y, i) <> "" Then temp(y, i) = CDate(temp(y, i))
+    Next y
+Next i
+Selection.NumberFormat = "m/d/yyyy"
+Selection = temp
+End Sub
