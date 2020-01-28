@@ -1,4 +1,0 @@
-Sub CodeGenerator()
-Attribute VB_Name = "VBADefault"
-
-End Sub
