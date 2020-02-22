@@ -1,0 +1,372 @@
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+' Функции общего назначения
+' Шевченко Дмитрий <primalevil@gmail.com>
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary>  </summary>
+''' <param name="">  </param>
+''' <returns>  </returns>
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Добавить к указанному значению нули до указанной длины </summary>
+''' <param name="aValue"> Текстовое значение к которому нужно добавить нули </param>
+''' <param name="bLength"> Число, конечная длина которая должна быть на выходе </param>
+''' <returns> Текстовое значение с добавленным нулям </returns>
+Public Function fnG_AddNulls(ByVal aValue As String, ByVal bLength As Integer, Optional ByVal sumb As String = "0") As String
+
+On Error GoTo fnG_AddNulls_Error ' При ошибке переход по метке
+
+fnG_AddNulls = aValue ' Присвоить значение
+
+If Len(aValue) < bLength Then ' Проверка количество символов
+
+    For i = 1 To bLength - Len(aValue) ' Инициализация циклa
+    
+        fnG_AddNulls = sumb & fnG_AddNulls ' Добавляем нули
+        
+    Next
+    
+End If
+
+Exit Function ' Завершение работы процедуры
+
+fnG_AddNulls_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_AddNulls") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+Public Function fnG_CheckArray(ByVal arr As Variant)
+
+On Error GoTo fnG_CheckArray_Error ' При ошибке переход по метке
+
+temp = UBound(arr)
+
+fnG_CheckArray = True
+
+Exit Function ' Завершение работы процедуры
+
+fnG_CheckArray_Error: ' Что делать при ошибке
+
+fnG_CheckArray = False
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Извлечь из указанного диапазона уникальные значения </summary>
+''' <remarks> Функция взята с интернета... </remarks>
+''' <param name="rng"> Диапазон откуда будем извлекать значения </param>
+''' <returns> Массив уникальных значений </returns>
+Public Function fnG_ExtractUniq(rng As Range) ' Из указанного диапазона извлечь уникальные значения
+Dim arr(), i&, S$, x
+On Error GoTo fnG_ExtractUniq_Error ' При ошибке переход по метке
+
+arr = Intersect(rng.Parent.UsedRange, rng).Value
+On Error Resume Next
+With New Collection
+  For Each x In arr()
+    S = Trim(x)
+    If Len(S) > 0 Then
+      If IsEmpty(.Item(S)) Then
+        For i = 1 To .Count
+          If S < .Item(i) Then Exit For
+        Next
+          If i > .Count Then .Add S, S Else .Add S, S, Before:=i
+      End If
+    End If
+  Next
+  ReDim arr(1 To .Count)
+  For i = 1 To .Count
+    arr(i) = .Item(i)
+  Next
+End With
+fnG_ExtractUniq = arr()
+
+Exit Function ' Завершение работы процедуры
+
+fnG_ExtractUniq_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_ExtractUniq") ' Вызов обработчика ошибок
+End Function
+Public Function fnG_RefreshDataTable(ByVal DataSheet As Worksheet, _
+                                    ByVal DataTable As String, _
+                                    ByVal OptionName As String, _
+                                    Optional ByVal ControlTime As String = "14:00:00") As Boolean
+
+On Error GoTo fnG_RefreshDataTable_Error
+
+refreshmark$ = fnG_GetParametr(OptionName)
+Dim refreshcheck As Boolean
+Dim resreshtime As Boolean
+
+If CDate(refreshmark) < Date Or (CDate(Now - Date) > CDate(ControlTime) And CDate(refreshmark) < CDate(ControlTime)) Then
+
+    DataSheet.Visible = xlSheetVisible ' Делаем видимым лист
+    DataSheet.Activate ' Переходим на лист
+    refreshcheck = fnG_RefreshQueryTable(Range(DataTable).ListObject.QueryTable) ' Обновляем таблицу с данными
+    If refreshcheck Then ' Проверяем что действительно обновилось
+        refreshtime = fnG_SetParametr(OptionName, Now()) ' Если удалось обновиться то сохраняем данные
+        fnG_RefreshDataTable = True ' Присваеваем возвращаемое значение
+    End If
+
+End If
+
+DataSheet.Visible = xlSheetHidden ' Скрываем лист с реестром
+
+Exit Function
+                                 
+fnG_RefreshDataTable_Error:
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_RefreshDataTable")
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Обновить указанную таблицу подключенных данных </summary>
+''' <param name="qTable"> Таблица которую нужно вернуть </param>
+''' <returns> Логическое значение - результат обновления. Если удалось обновить то "True", иначе = "False" </returns>
+Public Function fnG_RefreshQueryTable(qTable As QueryTable) As Boolean
+
+fnG_RefreshQueryTable = False ' Дефолтное значение
+try& = 0
+
+On Error GoTo fnG_RefreshQueryTable_Error ' При ошибке переход по метке
+
+mainaction:
+
+qTable.Refresh BackgroundQuery:=False ' Обновляем даты заказов
+fnG_RefreshQueryTable = True ' Устанавливаем положительное возвращаемое значение
+
+Exit Function ' Завершение работы процедуры
+
+fnG_RefreshQueryTable_Error: ' Что делать при ошибке
+
+Application.Wait Time:=Now + TimeSerial(0, 1, 0) ' Ожидаем одну минуту
+try = try + 1 ' Увеличиваем счетчик попыток
+If try < 5 Then GoTo mainaction ' Если совершено менее 5 попыток то пробуем еще раз
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_RefreshQueryTable") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Определить верхнюю и нижнию границы таблицы </summary>
+''' <param name="tSheet"> Лист, как объект, на котором таблица границы которой будем опрелять </param>
+''' <param name="ColHead"> Имя колонки по которой будем определять границы таблицы. Колонка не должна содержать пустых строк и не быть первой на листе ("А:А") </param>
+''' <returns> Массив из 2 элементов с верхней и нижней границами таблицы </returns>
+Public Function fnG_GetBorders(ByVal tSheet As Worksheet, ByVal ColHead As String) As Variant
+
+Dim borders(1) As Long ' Массив для запоминания гоан ц таблицы
+
+On Error GoTo fnG_GetBorders_Error ' При ошибке переход по метке
+
+For i& = 1 To 1048576 ' Перебор строк на указанном листе
+
+    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then borders(0) = i: Exit For ' Ищем в строке название колонки, при нахождении запоминаем номер строки и прерываем цикл
+    
+Next i
+
+sCol& = tSheet.Range(borders(0) & ":" & borders(0)).Find(ColHead, , , xlWhole).Column ' Ищем номер колонки
+borders(1) = tSheet.Range(tSheet.Cells(borders(0), sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Ищем пустую строку в этой колонке
+fnG_GetBorders = borders ' Присваеваем возвращаемому значению массив с границами таблицы
+
+Exit Function ' Завершение работы процедуры
+
+fnG_GetBorders_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_GetBorders") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Создать коллекцию файлов из указанной папки, отобранные по указанной маске </summary>
+''' <remarks> Функция взята с интернета </remarks>
+''' <param name="FolderPath"> Папка в которой будет производиться поиск </param>
+''' <param name="Mask"> Маска поиска </param>
+''' <param name="SearchDeep"> Глубина поиска. Если в папке есть вложенные папки, то можно указать глубину поиска от 1 до 999. Не обязательный </param>
+''' <returns> Коллекцию имен файлов </returns>
+Public Function fnG_FilenamesCollection(ByVal FolderPath As String, Optional ByVal Mask As String = "", Optional ByVal SearchDeep As Long = 999) As Object
+    On Error Resume Next ' Защита от ошибок
+    Set fnG_FilenamesCollection = New Collection ' Создаем коллекцию для имен файлов
+    Set FSO = CreateObject("Scripting.FileSystemObject") ' Создаем объект взаимодействия с файловой системой
+    fnG_GetAllFileNamesUsingFSOs FolderPath, Mask, FSO, fnG_FilenamesCollection, SearchDeep ' Производим поиск файлов в указанной папке, по указанной маске поиска
+    Set FSO = Nothing: Application.StatusBar = False ' обнуляем объект для очиськи памяти
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Составить коллекция имен файлов из указанной папки по указанной маске </summary>
+''' <remarks> Функция взята с интернета... </remarks>
+''' <param name="FolderPath"> Папка в которой будет производиться поиск файлов </param>
+''' <param name="Mask"> Маска поиска </param>
+''' <param name="FSO"> Объект взаимодействия с файловой системой </param>
+''' <param name="FileNamesColl"> Коллекция имен найденных файлов </param>
+''' <param name="SearchDeep"> Глубина поиска </param>
+''' <returns> Коллекция имен найденных файлов </returns>
+Public Function fnG_GetAllFileNamesUsingFSOs(ByVal FolderPath As String, ByVal Mask As String, ByRef FSO, ByRef FileNamesColl As Collection, ByVal SearchDeep As Long) ' Поиск файлов по маске в указанной папке
+    On Error Resume Next: Set curfold = FSO.GetFolder(FolderPath) ' Хащита от ошибок
+    If Not curfold Is Nothing Then ' Проверяем что папка существует и ы ней есть что-то
+        For Each fil In curfold.Files ' Перебор элемеетов в папке
+            If fil.Path Like "*" & Mask & "*" Then FileNamesColl.Add fil.Path ' Сравнение найденого элемента с маской поиска
+        Next
+        SearchDeep = SearchDeep - 1 ' Уменьшаем глубину поиска
+        If SearchDeep Then
+            For Each sfol In curfold.SubFolders
+                fnG_GetAllFileNamesUsingFSOs sfol.Path, Mask, FSO, FileNamesColl, SearchDeep
+            Next
+        End If
+        Set fil = Nothing: Set curfold = Nothing ' Удаляем объекты очищаем память
+    End If
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Подхвать данных с листа </summary>
+''' <param name="nSheet"> Лист с которого юудем брать данные </param>
+''' <param name="fRow"> Первая строка таблицы с "Шапкой" </param>
+''' <param name="lRow"> Последняя строка таблицы. Точнее первая пустая строка ниже таблицы </param>
+''' <param name="ColName"> Имя столбца с которого будем брать данные </param>
+''' <param name="checkcol"> Метка проверять и очищать колонку перед тем как дать данные </param>
+''' <returns> Двумерный массив данных </returns>
+Public Function fnG_GetDataFromSheet(ByVal nSheet As Worksheet, ByVal fRow As Long, ByVal lRow As Long, ByVal ColName As String, ByVal checkcol As Boolean) As Variant
+
+On Error GoTo fnG_GetDataFromSheet_Error ' При ошибке переход по метке
+
+If checkcol Then Call scGCheck_Col(nSheet, ColName, fRow) ' Если стоит индикатор проверки колонки, то выполняем ее
+
+tCol& = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Получаем номер колонки
+fnG_GetDataFromSheet = nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(lRow, tCol)) ' Берем данные
+
+Exit Function ' Завершение работы процедуры
+
+fnG_GetDataFromSheet_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_GetDataFromSheet") ' Вызов обработчика ошибок
+
+fnG_GetDataFromSheet = Array("Нет данных") ' Присваеваем возвращаемому значению сообщение что данных нет
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Получить индекс элемента массива </summary>
+''' <param name="arr"> Массив элементов </param>
+''' <param name="searchkey"> Ключ поиска </param>
+''' <returns> Число - номер элеммента массива </returns>
+Public Function fnG_GetID(ByVal arr As Variant, ByVal searchkey As String) As Long
+
+On Error GoTo fnG_GetID_Error ' При ошибке переход по метке
+
+For i& = LBound(arr) To UBound(arr) ' цикл перебора элементов массива
+
+    If arr(i) = searchkey Then fnG_GetID = i + 1: Exit Function ' Сравнение элента с искомым значением. При совпадении выход из цикла. Индекс элемента увеличиваем на 1 т.к. массив начинается с 0
+
+Next i
+
+Exit Function ' Завершение работы процедуры
+
+fnG_GetID_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_GetID") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Открыть указанный файл под чтением </summary>
+''' <param name=""> Путь к файлу </param>
+''' <returns> Логическое значение - True/False, в зависимости от того получилось ли открыть файл или нет </returns>
+Public Function fnG_OpenFileReadOnly(ByVal file As String) As Boolean
+
+On Error GoTo fnG_OpenFileReadOnly_Error ' При ошибке переход по метке
+
+fnG_OpenFileReadOnly = False ' Значение по умолчанию для проверки открытия файла
+
+Workbooks.Open filename:=file, Format:=6, Delimiter:=";", Local:=True, ReadOnly:=True ' Открываем файл под чтением
+
+fnG_OpenFileReadOnly = True ' Значение для проверки открытия файла
+
+Exit Function ' Завершение работы процедуры
+
+fnG_OpenFileReadOnly_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_OpenFileReadOnly") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Сохранение значение опции на листе опций </summary>
+''' <param name="param"> Название опции </param>
+''' <param name="valstring"> Записываемое значение опции </param>
+''' <returns> Логическое значение - результат сохранения опци </returns>
+Public Function fnG_SetParametr(ByVal param As String, ByVal valstring As String) As Boolean
+
+On Error GoTo fnG_SetParametr_Error ' При ошибке переход по метке
+
+fnG_SetParametr = False ' Значение по умолчанию
+
+If Not Worksheets("Опции").Range("A:A").Find(param, , , xlWhole) Is Nothing Then ' Поиск такой опции
+
+    Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value = valstring ' Если опция найдена, то присваеваем новое значние
+    
+Else
+
+    nRow& = Worksheets("Опции").Range("A:A").Find("", , , xlWhole).Row ' Если опция не найдена, ищем пустую строку
+    Worksheets("Опции").Cells(nRow, 1).Value = param ' Вписываем название опции
+    Worksheets("Опции").Cells(nRow, 2).Value = valstring ' Вписываем значение опции
+    
+End If
+
+fnG_SetParametr = True ' Присваеваем положительное возвращаемое значение означающее что значение опции сохранено
+
+Exit Function ' Завершение работы процедуры
+
+fnG_SetParametr_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_SetParametr") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+''' <summary> Получение значения опции </summary>
+''' <param name="param"> Название опции </param>
+''' <returns> Значение опции </returns>
+Public Function fnG_GetParametr(ByVal param As String) As String
+
+On Error GoTo fnG_GetParametr_Error ' При ошибке переход по метке
+
+fnG_GetParametr = "Опция не получена!" ' Значение по умолчанию
+
+fnG_GetParametr = Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value ' Поиск значения
+
+Exit Function ' Завершение работы процедуры
+
+fnG_GetParametr_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_GetParametr") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+Public Function fnG_FilterVals()
+
+On Error GoTo fnG_FilterVals_Error ' При ошибке переход по метке
+
+Set fil = ActiveSheet.AutoFilter
+ReDim vals(fil.Filters.Count) As String
+Dim i As Integer
+i = 0
+For Each tfil In fil.Filters
+    On Error Resume Next
+    temp = ""
+    temp = tfil.Criteria1
+    temp2 = ""
+    temp2 = tfil.Criteria2
+    i = i + 1
+    If TypeName(temp) = "Variant()" Then
+        For zx = LBound(temp) To UBound(temp)
+        If vals(i) = "" Then
+            vals(i) = temp(zx)
+        Else
+            vals(i) = vals(i) & "," & temp(zx)
+        End If
+        Next zx
+    Else
+        vals(i) = temp
+        If temp2 <> "" Then vals(i) = vals(i) & "," & temp2
+    End If
+
+    
+Next
+fnG_FilterVals = vals
+
+Exit Function ' Завершение работы процедуры
+
+fnG_FilterVals_Error: ' Что делать при ошибке
+
+Call scG_ErrorLog(Err, "Global_Functions", "fnG_FilterVals") ' Вызов обработчика ошибок
+
+End Function
