@@ -1,0 +1,807 @@
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+' Описание: Скрипты общего назначения
+' Автор:    Шевченко Дмитрий <dmitry.shevchenko@lenta.com>
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+'Public Sub Script_Pattern()
+'
+'sc_Global_Screen_Updating Act:=False ' Выключаем обновление экрана
+'
+'ReDim Cols_Heads(1) As Variant: Cols_Heads = Array("") ' Имена столбцов с которыми будем взаимодействовать
+'
+'ReDim DataTable(1 To UBound(Cols_Heads) + 1) As Variant ' Создаем массив для данных с листа
+'ReDim Calc_Cols(1) As Variant: Calc_Cols = Array("") ' Имена расчетных столбцов
+'ReDim Cols_Form(1) As Variant: Cols_Form = Array("") ' Форматы расчетных столбцов при вставке
+'
+'Dim tSheet As Worksheet: Set tSheet = Лист2 ' Лист с которым будем взаимодействовать
+'
+'Call sc_Global_Data_Manipulate(DataTable, tSheet, Cols_Heads, Calc_Cols, Cols_Form, True, True) ' Подхват данных с листа и отправка их в массив
+'
+'For ind& = LBound(DataTable(1)) + 1 To UBound(DataTable(1)) - 1 ' Перебор строк в массиве
+'
+'    DataTable(fn_Global_Get_Id(Cols_Heads, ""))(ind, 1) = ""
+'
+'Next ind
+'
+'Call sc_Global_Data_Manipulate(DataTable, tSheet, Cols_Heads, Calc_Cols, Cols_Form, False, False) ' Вставка данных на лист
+'
+'Erase Cols_Heads, DataTable, Calc_Cols, Cols_Form
+'
+'sc_Global_Screen_Updating Act:=True ' Включаем обновление экрана
+'
+'End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Data_Manipulate(ByRef DataTable As Variant, _
+                                     ByVal DataSheet As Object, _
+                                     ByVal ColsNames As Variant, _
+                                     ByVal CalcCols As Variant, _
+                                     ByVal ColsFormats As Variant, _
+                                     Optional ByVal PickUp As Boolean = True, _
+                                     Optional ByVal ColsCheck As Boolean = True)
+' Создано: 2020.02.27 13:06:31
+' Автор: dmitry.shevchenko
+' <summary> Подхвать данных с листа или вставка данных на лист </summary>
+' <param name="DataTable"> Массив данных куда будем вставлять данные с листа, или откуда будем вставлять данные на лист </param>
+' <param name="DataSheet"> Лист с которым будем взаимодействовать </param>
+' <param name="ColsNames"> Массив имен колонок которые будем брать с листа. Количество в должно совпадать с размером DataTable </param>
+' <param name="CalcCols"> Имена столбцов которые вставлять и/или расчтеных столбцов которые нужно проверить </param>
+' <param name="ColsFormats"> Массив форматов вставляемых столбцов. По количеству элементов должен быть идентичен ColsNames </param>
+' <param name="PickUp"> Метка совершаемого действия. True - подхват данных с листа. False - вставка данных на лист </param>
+' <param name="ColsCheck"> Метка проверки расчетных столбцов. Если столбец существует он очищается от данных </param>
+
+On Error GoTo sc_Global_Data_Manipulate_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+ReDim borders(1) As Long: borders = fn_Global_Get_Edges(DataSheet, ColsNames(0)) ' Определяем первую и последнии строки в таблице
+
+Dim checkcol As Boolean ' Логическое поле для метки проверять колонку перед работой с ней
+
+For ind& = LBound(DataTable) To UBound(DataTable) ' Перебор столбцов
+    
+    checkcol = False ' Ставим метку что колонку проверять не нужно
+    cformat$ = "-" ' Формат по умолчанию не меняем
+    inf& = fn_Global_Get_Id(CalcCols, ColsNames(ind - 1)) - 1 ' Получаем индекс имени колонки в списке расчетных колонок
+    If inf > -1 Then ' Сравниваем имя обрабатываемой колонки со списком расчетных колонок
+        If ColsCheck Then checkcol = True ' Если стоит метка о необходимости проверки колокнки то ставим метку проверки колонки
+        If Not PickUp Then cformat = ColsFormats(inf) ' Если это вставка данных, то указываем формат вставки данных
+    End If
+    If PickUp Then ' Проверяем какое действие нужно совершить
+        DataTable(ind) = fn_Global_Get_Data(DataSheet, borders(0), borders(1), ColsNames(ind - 1), checkcol) ' Отправляем данные с листа в массив
+    Else ' Если данные нужно вставить на лист
+        Call sc_Global_Set_Data(DataSheet, borders(0), ColsNames(ind - 1), DataTable(ind), cformat, checkcol) ' Вставляем данные на лист
+    End If
+
+Next ind
+
+If Not PickUp Then Call sc_Global_Delete_Fantom_Row(DataSheet, ColsNames(0)) ' Стираем последнюю пустую строку которая появляется после вставки данных на лист
+
+Erase borders
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Data_Manipulate_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Data_Manipulate") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_String_To_Txt(ByVal text As String, _
+                                   ByVal filename As String)
+' Создано: 2020.02.27 12:05:58
+' Автор: dmitry.shevchenko
+' <summary> Сохранить строку в TXT файле </summary>
+' <param name="text"> Строка которую будем сохранять </param>
+' <param name="filename"> Полный путь к файлу в котором будем сохранять. Если файл не существует, то он будет создан </param>
+
+On Error GoTo sc_Global_String_To_Txt_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Set FSO = CreateObject("scripting.filesystemobject")
+check = Len(Dir(filename)) > 0
+Set textfile = FSO.OpenTextFile(filename, 8, True)
+textfile.Write vbNewLine & text
+textfile.Close
+Set textfile = Nothing
+Set FSO = Nothing
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_String_To_Txt_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_String_To_Txt") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Error_Log(ByVal errn As Object, _
+                               ByVal modulename As String, _
+                               ByVal procname As String)
+' Создано: 2020.02.27 11:55:37
+' Автор: dmitry.shevchenko
+' <summary> Логирование ошибок </summary>
+' <param name="errn"> Перехваченная ошибка </param>
+' <param name="modulename"> Название моделя где была перехвачена ошибка </param>
+' <param name="procname"> Имя объекта в котором перехвачена ошибка </param>
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+temp1$ = Now() & vbTab & ActiveWorkbook.Name & vbTab & Environ("COMPUTERNAME") & vbTab & Environ("USERNAME") & vbTab & modulename & vbTab & procname & vbTab & errn.Number & vbTab & Replace(Err.Description, vbNewLine, " | ")
+
+'temp2$ = ThisWorkbook.Path & "\Журнал ошибок " & Year(Now()) & "." & fn_Global_Add_Symbols(Month(Now), 2) & "." & fn_Global_Add_Symbols(Day(Now), 2) & ".txt"
+temp2$ = ThisWorkbook.Path & "\Журнал ошибок.txt"
+
+sc_Global_String_To_Txt text:=temp1, filename:=temp2
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Screen_Updating(ByVal Act As Boolean)
+' Создано: 2020.02.27 11:45:08
+' Автор: dmitry.shevchenko
+' <summary> Управление обновлением экрана </summary>
+' <param name="Act"> Метка совершаемого действия </param>
+
+On Error GoTo sc_Global_Screen_Updating_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Application.ScreenUpdating = Act
+Application.ShowWindowsInTaskbar = Act
+Application.AskToUpdateLinks = Act
+Application.DisplayAlerts = Act
+Application.EnableEvents = Act
+Application.DisplayStatusBar = Act
+If Act Then
+    Application.EnableCancelKey = xlDisabled
+    Application.Calculation = xlCalculationManual
+    Application.DisplayCommentIndicator = xlNoIndicator
+Else
+    Application.EnableCancelKey = xlInterrupt
+    Application.Calculation = xlCalculationAutomatic
+    Application.DisplayCommentIndicator = xlCommentAndIndicator
+End If
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Screen_Updating_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Screen_Updating") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Delete_Fantom_Row(ByVal tSheet As Object, _
+                                       ByVal ColHead As String)
+' Создано: 2020.02.27 11:41:00
+' Автор: dmitry.shevchenko
+' <summary> Удалить первую пустую строку после таблицы. При вставке данных на лист появляется лишняя пустая строка </summary>
+' <param name="tSheet"> Лист на котором будем удалять фантомную строку </param>
+' <param name="ColHead"> Название колонки по которой будем определять границы таблицы. Колонка не должна сожержать пустых значений </param>
+
+On Error GoTo sc_Global_Delete_Fantom_Row_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+For i& = 1 To 1048576 ' Перебор строк на листе
+
+    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then Exit For ' При нахождении в строке исклмого заняения выходим из цикла
+    
+Next i
+
+sCol& = tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole).Column ' Находим номер колонки с искомым значением
+lRow& = tSheet.Range(tSheet.Cells(i, sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Находим в этой колонке пустую строку
+Rows(lRow & ":" & lRow).Delete Shift:=xlUp ' удаляем строку
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Delete_Fantom_Row_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_Fantom_Row") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Check_Column(ByVal aSheet As Object, _
+                                  ByVal bText As String, _
+                                  ByVal cRow As Long)
+' Создано: 2020.02.27 11:35:40
+' Автор: dmitry.shevchenko
+' <summary> Проверяет существует ли в таблице такая колонка, если да, то очищает ее от значений </summary>
+' <param name="aSheet"> Лист на кототором находится таблица </param>
+' <param name="bText"> Название проверяемой колонки </param>
+' <param name="cRow"> Номер строки на которой расположена "шапка" таблицы </param>
+
+On Error GoTo sc_Global_Check_Column_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+If Not aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole) Is Nothing Then ' ищем в указанной строке нужное значение
+    
+    aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole).EntireColumn.ClearContents ' Если нашли колонку, то стираем все данные из нее
+    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("", , , xlWhole).Column).Value = bText ' Заново вписываем на лист имя колонки
+        
+Else ' Если колонка не существует
+    
+    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("").Column).Value = bText ' Ищем в указанной строке пустую ячейку и вписываем им колонки
+    
+End If
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Check_Column_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Check_Column") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Delete_File(ByVal filename As String)
+' Создано: 2020.02.27 11:31:56
+' Автор: dmitry.shevchenko
+' <summary> Удалить указанный файл </summary>
+' <param name="filename"> Полный путь к файлу </param>
+
+On Error GoTo sc_Global_Delete_File_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Kill filename ' Удаляем файл
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Delete_File_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_File") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_File_Done(ByVal filename As String)
+' Создано: 2020.02.27 11:29:44
+' Автор: dmitry.shevchenko
+' <summary> Переименовать обработанную выгрузку </summary>
+' <param name="filename"> Полныть путь к файлу </param>
+
+On Error GoTo sc_Global_File_Done_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+newname = Left(filename, Len(filename) - InStr(StrReverse(filename), "\")) & "\" & Environ("USERNAME") & " " & Right(filename, InStr(StrReverse(filename), "\") - 1) ' Новое имя файла
+Name filename As newname ' Переименовываем вставляя в начало имени файла - имя юзера обработавшего файл
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_File_Done_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_File_Done") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Set_Data(ByVal nSheet As Object, _
+                              ByVal fRow As Long, _
+                              ByVal ColName As String, _
+                              ByVal dTable As Variant, _
+                              ByVal nFormat As String, _
+                              Optional ByVal checkcol As Boolean = False)
+' Создано: 2020.02.27 11:26:13
+' Автор: dmitry.shevchenko
+' <summary> Вставить данные из массива на лист </summary>
+' <param name="nSheet"> Лист на который будем вставлять данные </param>
+' <param name="fRow"> Номер строки с "шапкой" таблицы </param>
+' <param name="ColName"> Имя вставляемого столбца </param>
+' <param name="dTable"> Массив данных </param>
+' <param name="nFormat"> Формат вставки </param>
+' <param name="checkcol"> Метка проверки и очистки столбца </param>
+
+On Error GoTo sc_Global_Set_Data_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Проверяем колонку если метка = True
+
+Dim cFor As Boolean: cFor = False
+
+Dim tCol As Long: tCol = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Ищем номер колонки куда будем вставлять данные
+
+Select Case nFormat ' Проверяем формат вставляемых данных
+        Case "Text" ' Текстовый формат
+                cformat = "@"
+                cFor = True
+        Case "All" ' Общий формат
+                cformat = "General"
+                cFor = True
+        Case "Number" ' Целые числа
+                cformat = "0"
+                cFor = True
+        Case "0.00" ' Числа до сотых
+                cformat = "0.00"
+                cFor = True
+        Case "Date" ' Дата
+                cformat = "m/d/yyyy"
+                cFor = True
+        Case "Money" ' Финансовый
+                cformat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
+                cFor = True
+End Select
+    
+If cFor Then nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)).NumberFormat = cformat ' диапазон куда будем вставлять преобразуем в нужный формат
+nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)) = dTable ' вставляем данные
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Set_Data_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Set_Data") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Clear_Sheet(ByVal tSheet As Object, _
+                                 ByVal mRow As Long)
+' Создано: 2020.02.27 11:19:35
+' Автор: dmitry.shevchenko
+' <summary> Очистка листа от данных </summary>
+' <param name="tSheet"> Лист на котором будем производить очистку </param>
+' <param name="mRow"> Номер строки с котрой начать очистку </param>
+
+On Error GoTo sc_Global_Clear_Sheet_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+lRow& = IIf(tSheet.UsedRange.Rows.Count > mRow, tSheet.UsedRange.Rows.Count, mRow + 1)
+
+tSheet.Rows(mRow & ":" & lRow).Delete Shift:=xlUp
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Clear_Sheet_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Clear_Sheet") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Off_All_Filters()
+' Создано: 2020.02.27 11:10:15
+' Автор: dmitry.shevchenko
+' <summary> Снять все фильтра </summary>
+
+On Error GoTo sc_Global_Off_All_Filters_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+If ActiveSheet.EnableAutoFilter Then ActiveSheet.ShowAllData
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Off_All_Filters_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Off_All_Filters") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Global_Return_Filters(ByRef temp() As String)
+' Создано: 2020.02.27 11:06:55
+' Автор: dmitry.shevchenko
+' <summary> Вернуть фильтр в исходное состояние </summary>
+' <param name="temp"> Массив с значениями фильтров </param>
+
+On Error GoTo sc_Global_Return_Filters_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+For i = LBound(temp) To UBound(temp)
+
+    If temp(i) <> "" Then
+        If InStr(temp(i), ",") > 0 Then
+            temp1 = Split(temp(i), ",")
+            ActiveSheet.UsedRange.AutoFilter Field:=i, Criteria1:=temp1, Operator:=xlFilterValues
+        Else
+            ActiveSheet.UsedRange.AutoFilter Field:=i, Criteria1:=temp(i)
+        End If
+    End If
+Next i
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Global_Return_Filters_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Return_Filters") ' Вызов обработчика ошибок
+
+End Sub
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Add_Symbols(ByVal aValue As String, _
+                                      ByVal bLength As Integer, _
+                                      Optional ByVal sumb As String = "0") As String
+' Создано: 2020.02.26 18:06:21
+' Автор: dmitry.shevchenko
+' <summary> Добавить к указанному значению в начало символы </summary>
+' <param name="aValue"> Значение к которому нужно добавить символы </param>
+' <param name="bLength"> Конечная длина строки которая должна получиться </param>
+' <param name="sumb"> Символ который будем добавлять в начало. По умолчанию ноль </param>
+' <returns> Значение с добавленными символами </return>
+
+On Error GoTo fn_Global_Add_Symbols_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+fn_Global_Add_Symbols = aValue ' Присвоить значение
+
+If Len(aValue) < bLength Then ' Проверка количество символов
+
+    For i = 1 To bLength - Len(aValue) ' Инициализация циклa
+    
+        fn_Global_Add_Symbols = sumb & fn_Global_Add_Symbols ' Добавляем нули
+        
+    Next
+    
+End If
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Add_Symbols_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Add_Symbols") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_ExtractUniq(rng As Range) ' Из указанного диапазона извлечь уникальные значения
+
+On Error GoTo fn_Global_ExtractUniq_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Dim arr(), i&, S$, x
+
+arr = Intersect(rng.Parent.UsedRange, rng).Value
+On Error Resume Next
+With New Collection
+  For Each x In arr()
+    S = Trim(x)
+    If Len(S) > 0 Then
+      If IsEmpty(.Item(S)) Then
+        For i = 1 To .Count
+          If S < .Item(i) Then Exit For
+        Next
+          If i > .Count Then .Add S, S Else .Add S, S, Before:=i
+      End If
+    End If
+  Next
+  ReDim arr(1 To .Count)
+  For i = 1 To .Count
+    arr(i) = .Item(i)
+  Next
+End With
+fn_Global_ExtractUniq = arr()
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы процедуры
+
+fn_Global_ExtractUniq_Error: ' Что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_ExtractUniq") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Refresh_Data(ByVal DataSheet As Object, _
+                                       ByVal DataTable As String, _
+                                       ByVal OptionName As String, _
+                                       Optional ByVal ControlTime As String = "09:00:00") As Boolean
+' Создано: 2020.02.27 11:00:47
+' Автор: dmitry.shevchenko
+' <summary> Обновить таблицу подключенных данных </summary>
+' <param name="DataSheet"> Лист на котором расположена таблица </param>
+' <param name="DataTable"> Таблица которую нужно обновить </param>
+' <param name="OptionName"> Имя опции с меткой последнего обновления </param>
+' <param name="ControlTime"> Контрольное время обновления </param>
+' <returns> True - данные обновлены, False - не обновлены </return>
+
+On Error GoTo fn_Global_Refresh_Data_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+refreshmark$ = fn_Global_Get_Option(OptionName)
+Dim refreshcheck As Boolean
+Dim resreshtime As Boolean
+
+If CDate(refreshmark) < Date Or (CDate(Now - Date) > CDate(ControlTime) And CDate(refreshmark) < CDate(ControlTime)) Then
+
+    DataSheet.Visible = xlSheetVisible ' Делаем видимым лист
+    DataSheet.Activate ' Переходим на лист
+    refreshcheck = fn_Global_Refresh_Table(Range(DataTable).ListObject.QueryTable) ' Обновляем таблицу с данными
+    If refreshcheck Then ' Проверяем что действительно обновилось
+        refreshtime = fn_Global_Set_Option(OptionName, Now()) ' Если удалось обновиться то сохраняем данные
+    End If
+
+End If
+
+fn_Global_Refresh_Data = True ' Присваеваем возвращаемое значение
+
+DataSheet.Visible = xlSheetHidden ' Скрываем лист с реестром
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Refresh_Data_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Data") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+
+Public Function fn_Global_Refresh_Table(ByVal qTable As Object) As Boolean
+' Создано: 2020.02.27 10:42:31
+' Автор: dmitry.shevchenko
+' <summary> Обновить таблицу подключения </summary>
+' <param name="qTable"> Таблица подключения </param>
+' <returns> True - если удалось обновить, False - если не удалось </return>
+
+fn_Global_Refresh_Table = False ' Дефолтное значение
+Dim try As Integer: try = 0 ' Счетчик обновлений
+
+On Error GoTo fn_Global_Refresh_Table_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+mainaction:
+
+qTable.Refresh BackgroundQuery:=False ' Обновляем даты заказов
+fn_Global_Refresh_Table = True ' Устанавливаем положительное возвращаемое значение
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы процедуры
+
+fn_Global_Refresh_Table_Error: ' Что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Table") ' Вызов обработчика ошибок
+
+Application.Wait Time:=Now + TimeSerial(0, 1, 0) ' Ожидаем одну минуту
+try = try + 1 ' Увеличиваем счетчик попыток
+If try < 5 Then GoTo mainaction ' Если совершено менее 5 попыток то пробуем еще раз
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Get_Edges(ByVal tSheet As Object, _
+                                    ByVal ColHead As String) As Variant
+' Создано: 2020.02.27 10:42:31
+' Автор: dmitry.shevchenko
+' <summary> Определить границы таблицы </summary>
+' <param name="tSheet"> Лист на котором расположена таблица </param>
+' <param name="ColHead"> Имя колонки по которой будем определять границы таблицы. Не должна сожержать пустых значений </param>
+' <returns> Массив из 2 элементов: верхней границы с "шапкой" таблицы и первой пустой строки после таблицы </return>
+
+On Error GoTo fn_Global_Get_Edges_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Dim borders(1) As Long ' Массив для запоминания границ таблицы
+
+For i& = 1 To 1048576 ' Перебор строк на указанном листе
+
+    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then borders(0) = i: Exit For ' Ищем в строке название колонки, при нахождении запоминаем номер строки и прерываем цикл
+    
+Next i
+
+sCol& = tSheet.Range(borders(0) & ":" & borders(0)).Find(ColHead, , , xlWhole).Column ' Ищем номер колонки
+borders(1) = tSheet.Range(tSheet.Cells(borders(0), sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Ищем пустую строку в этой колонке
+
+fn_Global_Get_Edges = borders ' Присваеваем возвращаемому значению массив с границами таблицы
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Get_Edges_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Edges") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+
+Public Function fnG_FilenamesCollection(ByVal FolderPath As String, Optional ByVal Mask As String = "", Optional ByVal SearchDeep As Long = 999) As Object
+    On Error Resume Next ' Защита от ошибок
+    Set fnG_FilenamesCollection = New Collection ' Создаем коллекцию для имен файлов
+    Set FSO = CreateObject("Scripting.FileSystemObject") ' Создаем объект взаимодействия с файловой системой
+    fnG_GetAllFileNamesUsingFSOs FolderPath, Mask, FSO, fnG_FilenamesCollection, SearchDeep ' Производим поиск файлов в указанной папке, по указанной маске поиска
+    Set FSO = Nothing: Application.StatusBar = False ' обнуляем объект для очиськи памяти
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+Public Function fnG_GetAllFileNamesUsingFSOs(ByVal FolderPath As String, ByVal Mask As String, ByRef FSO, ByRef FileNamesColl As Collection, ByVal SearchDeep As Long) ' Поиск файлов по маске в указанной папке
+    On Error Resume Next: Set curfold = FSO.GetFolder(FolderPath) ' Хащита от ошибок
+    If Not curfold Is Nothing Then ' Проверяем что папка существует и ы ней есть что-то
+        For Each fil In curfold.Files ' Перебор элемеетов в папке
+            If fil.Path Like "*" & Mask & "*" Then FileNamesColl.Add fil.Path ' Сравнение найденого элемента с маской поиска
+        Next
+        SearchDeep = SearchDeep - 1 ' Уменьшаем глубину поиска
+        If SearchDeep Then
+            For Each sfol In curfold.SubFolders
+                fnG_GetAllFileNamesUsingFSOs sfol.Path, Mask, FSO, FileNamesColl, SearchDeep
+            Next
+        End If
+        Set fil = Nothing: Set curfold = Nothing ' Удаляем объекты очищаем память
+    End If
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Get_Data(ByVal nSheet As Object, _
+                                   ByVal fRow As Long, _
+                                   ByVal lRow As Long, _
+                                   ByVal ColName As String, _
+                                   Optional ByVal checkcol As Boolean = False) As Variant
+' Создано: 2020.02.27 10:32:19
+' Автор: dmitry.shevchenko
+' <summary> Данные с листа отправить в массив </summary>
+' <param name="nSheet"> Лист с которого будем получать данные </param>
+' <param name="fRow"> Первая строка на листе где шапка таблицы </param>
+' <param name="lRow"> Первая пустая строка после окончания таблицы </param>
+' <param name="ColName"> Имя столбца из которого будем брать данные </param>
+' <param name="checkcol"> Маркер нужно ли проверять наличие колонки и очищать ее </param>
+' <returns> Двумерный массив данных с листа </return>
+
+On Error GoTo fn_Global_Get_Data_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Если стоит индикатор проверки колонки, то выполняем ее
+
+tCol& = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Получаем номер колонки
+fn_Global_Get_Data = nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(lRow, tCol)) ' Берем данные
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Get_Data_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Data") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Get_Id(ByVal arr As Variant, _
+                                 ByVal searchkey As String) As Long
+' Создано: 2020.02.26 18:00:20
+' Автор: dmitry.shevchenko
+' <summary> Получить индекс значения в массиве </summary>
+' <param name="arr"> Массив в котором будем искать индекс элемента </param>
+' <param name="searchkey"> Элемент индекс которого будем искать </param>
+' <returns> Индекс элемента в массиве </return>
+
+On Error GoTo fn_Global_Get_Id_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+For i& = LBound(arr) To UBound(arr) ' цикл перебора элементов массива
+
+    If arr(i) = searchkey Then fn_Global_Get_Id = i + 1: Exit Function ' Сравнение элента с искомым значением. При совпадении выход из цикла. Индекс элемента увеличиваем на 1 т.к. массив начинается с 0
+
+Next i
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Get_Id_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Id") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Set_Option(ByVal param As String, _
+                                     ByVal valstring As String) As Boolean
+' Создано: 2020.02.26 17:42:29
+' Автор: dmitry.shevchenko
+' <summary> Сохранить значение опции. Для этого в книге должен быть лист с именем "Опции", на котором в столбце "А" должны быть названия опций, а в столбце "В" - значения </summary>
+' <param name="param"> Название опции </param>
+' <param name="valstring"> Значение опции </param>
+' <returns> True - если удалось сохранить значение опции. False - если не удалось </return>
+
+On Error GoTo fn_Global_Set_Option_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+fn_Global_Set_Option = False ' Значение по умолчанию
+
+If Not Worksheets("Опции").Range("A:A").Find(param, , , xlWhole) Is Nothing Then ' Поиск такой опции
+
+    Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value = valstring ' Если опция найдена, то присваеваем новое значние
+    
+Else
+
+    nRow& = Worksheets("Опции").Range("A:A").Find("", , , xlWhole).Row ' Если опция не найдена, ищем пустую строку
+    Worksheets("Опции").Cells(nRow, 1).Value = param ' Вписываем название опции
+    Worksheets("Опции").Cells(nRow, 2).Value = valstring ' Вписываем значение опции
+    
+End If
+
+fn_Global_Set_Option = True ' Присваеваем положительное возвращаемое значение означающее что значение опции сохранено
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Set_Option_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Set_Option") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Get_Option(ByVal param As String) As String
+' Создано: 2020.02.26 17:18:19
+' Автор: dmitry.shevchenko
+' <summary> Получить значение опции по ее имени. Для этого в книге должен существовать лист и именем "Опции", в колонке "А" должны быть имена опций, а в колонке "В" - значения опций </summary>
+' <param name="param"> Название опции значение которой нужно получить </param>
+' <returns> Строку сожержащую значение опции </return>
+
+On Error GoTo fn_Global_Get_Option_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+fn_Global_Get_Option = "Опция не получена!" ' Значение по умолчанию
+
+fn_Global_Get_Option = Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value ' Поиск значения
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Exit Function ' Завершение работы
+
+fn_Global_Get_Option_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Option") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Open_File_Read_Only(ByVal file As String) As Boolean
+' Создано: 2020.02.26 17:25:13
+' Автор: dmitry.shevchenko
+' <summary> Открыть файл под чтением </summary>
+' <param name="file"> Полный путь к файлу </param>
+' <returns> True - если получилось открыть файл. False - если не получилось </return>
+
+On Error GoTo fn_Global_Open_File_Read_Only_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+fn_Global_Open_File_Read_Only = False ' Значение по умолчанию для проверки открытия файла
+
+Workbooks.Open filename:=file, Format:=6, Delimiter:=";", Local:=True, ReadOnly:=True ' Открываем файл под чтением
+
+fn_Global_Open_File_Read_Only = True ' Значение для проверки открытия файла
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Open_File_Read_Only_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Open_File_Read_Only") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Filter_Vals() As Variant
+' Создано: 2020.02.26 17:09:26
+' Автор: dmitry.shevchenko
+' <summary> Получить список значений установленных фильтров </summary>
+' <returns> Массив строк содержащий значения установленных фильтров. Размер массива будет соответствовать количеству колонок. Если значений несколько, то они будут разделены запятой с пробелом </return>
+
+On Error GoTo fn_Global_Filter_Vals_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+Dim fil As Object: Set fil = ActiveSheet.AutoFilter
+
+ReDim vals(fil.Filters.Count) As String
+
+Dim i As Integer: i = 0
+
+For Each tfil In fil.Filters
+    On Error Resume Next
+    temp = ""
+    temp = tfil.Criteria1
+    temp2 = ""
+    temp2 = tfil.Criteria2
+    i = i + 1
+    If TypeName(temp) = "Variant()" Then
+        For zx& = LBound(temp) To UBound(temp)
+        If vals(i) = "" Then
+            vals(i) = temp(zx)
+        Else
+            vals(i) = vals(i) & "," & temp(zx)
+        End If
+        Next zx
+    Else
+        vals(i) = temp
+        If temp2 <> "" Then vals(i) = vals(i) & "," & temp2
+    End If
+
+    
+Next
+
+fn_Global_Filter_Vals = vals
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Global_Filter_Vals_Error: ' Инструкции что делать при ошибке
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Filter_Vals") ' Вызов обработчика ошибок
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
