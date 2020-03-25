@@ -1,34 +1,11 @@
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
-' Описание: Скрипты общего назначения
-' Автор:    Шевченко Дмитрий <dmitry.shevchenko@lenta.com>
+' Îïèñàíèå: Ñêðèïòû îáùåãî íàçíà÷åíèÿ
+' Êîìïàíèÿ: ÎÎÎ "Ëåíòà"
+' Îòäåë:    Ãðóïïà ïî âåäåíèþ áàçû äàííûõ
+' Àâòîð:    Øåâ÷åíêî Äìèòðèé <dmitry.shevchenko@lenta.com>
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
-'Public Sub Script_Pattern()
-'
-'sc_Global_Screen_Updating Act:=False ' Выключаем обновление экрана
-'
-'ReDim Cols_Heads(1) As Variant: Cols_Heads = Array("") ' Имена столбцов с которыми будем взаимодействовать
-'
-'ReDim DataTable(1 To UBound(Cols_Heads) + 1) As Variant ' Создаем массив для данных с листа
-'ReDim Calc_Cols(1) As Variant: Calc_Cols = Array("") ' Имена расчетных столбцов
-'ReDim Cols_Form(1) As Variant: Cols_Form = Array("") ' Форматы расчетных столбцов при вставке
-'
-'Dim tSheet As Worksheet: Set tSheet = Лист2 ' Лист с которым будем взаимодействовать
-'
-'Call sc_Global_Data_Manipulate(DataTable, tSheet, Cols_Heads, Calc_Cols, Cols_Form, True, True) ' Подхват данных с листа и отправка их в массив
-'
-'For ind& = LBound(DataTable(1)) + 1 To UBound(DataTable(1)) - 1 ' Перебор строк в массиве
-'
-'    DataTable(fn_Global_Get_Id(Cols_Heads, ""))(ind, 1) = ""
-'
-'Next ind
-'
-'Call sc_Global_Data_Manipulate(DataTable, tSheet, Cols_Heads, Calc_Cols, Cols_Form, False, False) ' Вставка данных на лист
-'
-'Erase Cols_Heads, DataTable, Calc_Cols, Cols_Form
-'
-'sc_Global_Screen_Updating Act:=True ' Включаем обновление экрана
-'
-'End Sub
+Private Const ModuleVersion As Double = 1.001 ' Íîìåð âåðñèè ìîäóëÿ
+' Îáíîâëåí: 2020.03.24 16:07:16 dmitry.shevchenko: Îáíîâëåíèå ýêðàíà - èñïðàâèë îòêëþ÷åíèå ôîðìóë
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Data_Manipulate(ByRef DataTable As Variant, _
                                      ByVal DataSheet As Object, _
@@ -37,63 +14,63 @@ Public Sub sc_Global_Data_Manipulate(ByRef DataTable As Variant, _
                                      ByVal ColsFormats As Variant, _
                                      Optional ByVal PickUp As Boolean = True, _
                                      Optional ByVal ColsCheck As Boolean = True)
-' Создано: 2020.02.27 13:06:31
-' Автор: dmitry.shevchenko
-' <summary> Подхвать данных с листа или вставка данных на лист </summary>
-' <param name="DataTable"> Массив данных куда будем вставлять данные с листа, или откуда будем вставлять данные на лист </param>
-' <param name="DataSheet"> Лист с которым будем взаимодействовать </param>
-' <param name="ColsNames"> Массив имен колонок которые будем брать с листа. Количество в должно совпадать с размером DataTable </param>
-' <param name="CalcCols"> Имена столбцов которые вставлять и/или расчтеных столбцов которые нужно проверить </param>
-' <param name="ColsFormats"> Массив форматов вставляемых столбцов. По количеству элементов должен быть идентичен ColsNames </param>
-' <param name="PickUp"> Метка совершаемого действия. True - подхват данных с листа. False - вставка данных на лист </param>
-' <param name="ColsCheck"> Метка проверки расчетных столбцов. Если столбец существует он очищается от данных </param>
+' Ñîçäàíî: 2020.02.27 13:06:31
+' Àâòîð: dmitry.shevchenko
+' <summary> Ïîäõâàòü äàííûõ ñ ëèñòà èëè âñòàâêà äàííûõ íà ëèñò </summary>
+' <param name="DataTable"> Ìàññèâ äàííûõ êóäà áóäåì âñòàâëÿòü äàííûå ñ ëèñòà, èëè îòêóäà áóäåì âñòàâëÿòü äàííûå íà ëèñò </param>
+' <param name="DataSheet"> Ëèñò ñ êîòîðûì áóäåì âçàèìîäåéñòâîâàòü </param>
+' <param name="ColsNames"> Ìàññèâ èìåí êîëîíîê êîòîðûå áóäåì áðàòü ñ ëèñòà. Êîëè÷åñòâî â äîëæíî ñîâïàäàòü ñ ðàçìåðîì DataTable </param>
+' <param name="CalcCols"> Èìåíà ñòîëáöîâ êîòîðûå âñòàâëÿòü è/èëè ðàñ÷òåíûõ ñòîëáöîâ êîòîðûå íóæíî ïðîâåðèòü </param>
+' <param name="ColsFormats"> Ìàññèâ ôîðìàòîâ âñòàâëÿåìûõ ñòîëáöîâ. Ïî êîëè÷åñòâó ýëåìåíòîâ äîëæåí áûòü èäåíòè÷åí ColsNames </param>
+' <param name="PickUp"> Ìåòêà ñîâåðøàåìîãî äåéñòâèÿ. True - ïîäõâàò äàííûõ ñ ëèñòà. False - âñòàâêà äàííûõ íà ëèñò </param>
+' <param name="ColsCheck"> Ìåòêà ïðîâåðêè ðàñ÷åòíûõ ñòîëáöîâ. Åñëè ñòîëáåö ñóùåñòâóåò îí î÷èùàåòñÿ îò äàííûõ </param>
 
-On Error GoTo sc_Global_Data_Manipulate_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Data_Manipulate_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-ReDim borders(1) As Long: borders = fn_Global_Get_Edges(DataSheet, ColsNames(0)) ' Определяем первую и последнии строки в таблице
+ReDim borders(1) As Long: borders = fn_Global_Get_Edges(DataSheet, ColsNames(0)) ' Îïðåäåëÿåì ïåðâóþ è ïîñëåäíèè ñòðîêè â òàáëèöå
 
-Dim checkcol As Boolean ' Логическое поле для метки проверять колонку перед работой с ней
+Dim checkcol As Boolean ' Ëîãè÷åñêîå ïîëå äëÿ ìåòêè ïðîâåðÿòü êîëîíêó ïåðåä ðàáîòîé ñ íåé
 
-For ind& = LBound(DataTable) To UBound(DataTable) ' Перебор столбцов
+For ind& = LBound(DataTable) To UBound(DataTable) ' Ïåðåáîð ñòîëáöîâ
     
-    checkcol = False ' Ставим метку что колонку проверять не нужно
-    cformat$ = "-" ' Формат по умолчанию не меняем
-    inf& = fn_Global_Get_Id(CalcCols, ColsNames(ind - 1)) - 1 ' Получаем индекс имени колонки в списке расчетных колонок
-    If inf > -1 Then ' Сравниваем имя обрабатываемой колонки со списком расчетных колонок
-        If ColsCheck Then checkcol = True ' Если стоит метка о необходимости проверки колокнки то ставим метку проверки колонки
-        If Not PickUp Then cformat = ColsFormats(inf) ' Если это вставка данных, то указываем формат вставки данных
+    checkcol = False ' Ñòàâèì ìåòêó ÷òî êîëîíêó ïðîâåðÿòü íå íóæíî
+    cformat$ = "-" ' Ôîðìàò ïî óìîë÷àíèþ íå ìåíÿåì
+    inf& = fn_Global_Get_Id(CalcCols, ColsNames(ind - 1)) - 1 ' Ïîëó÷àåì èíäåêñ èìåíè êîëîíêè â ñïèñêå ðàñ÷åòíûõ êîëîíîê
+    If inf > -1 Then ' Ñðàâíèâàåì èìÿ îáðàáàòûâàåìîé êîëîíêè ñî ñïèñêîì ðàñ÷åòíûõ êîëîíîê
+        If ColsCheck Then checkcol = True ' Åñëè ñòîèò ìåòêà î íåîáõîäèìîñòè ïðîâåðêè êîëîêíêè òî ñòàâèì ìåòêó ïðîâåðêè êîëîíêè
+        If Not PickUp Then cformat = ColsFormats(inf) ' Åñëè ýòî âñòàâêà äàííûõ, òî óêàçûâàåì ôîðìàò âñòàâêè äàííûõ
     End If
-    If PickUp Then ' Проверяем какое действие нужно совершить
-        DataTable(ind) = fn_Global_Get_Data(DataSheet, borders(0), borders(1), ColsNames(ind - 1), checkcol) ' Отправляем данные с листа в массив
-    Else ' Если данные нужно вставить на лист
-        Call sc_Global_Set_Data(DataSheet, borders(0), ColsNames(ind - 1), DataTable(ind), cformat, checkcol) ' Вставляем данные на лист
+    If PickUp Then ' Ïðîâåðÿåì êàêîå äåéñòâèå íóæíî ñîâåðøèòü
+        DataTable(ind) = fn_Global_Get_Data(DataSheet, borders(0), borders(1), ColsNames(ind - 1), checkcol) ' Îòïðàâëÿåì äàííûå ñ ëèñòà â ìàññèâ
+    Else ' Åñëè äàííûå íóæíî âñòàâèòü íà ëèñò
+        Call sc_Global_Set_Data(DataSheet, borders(0), ColsNames(ind - 1), DataTable(ind), cformat, checkcol) ' Âñòàâëÿåì äàííûå íà ëèñò
     End If
 
 Next ind
 
-If Not PickUp Then Call sc_Global_Delete_Fantom_Row(DataSheet, ColsNames(0)) ' Стираем последнюю пустую строку которая появляется после вставки данных на лист
+If Not PickUp Then Call sc_Global_Delete_Fantom_Row(DataSheet, ColsNames(0)) ' Ñòèðàåì ïîñëåäíþþ ïóñòóþ ñòðîêó êîòîðàÿ ïîÿâëÿåòñÿ ïîñëå âñòàâêè äàííûõ íà ëèñò
 
 Erase borders
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Data_Manipulate_Error: ' Инструкции что делать при ошибке
+sc_Global_Data_Manipulate_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Data_Manipulate") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Data_Manipulate", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_String_To_Txt(ByVal text As String, _
                                    ByVal filename As String)
-' Создано: 2020.02.27 12:05:58
-' Автор: dmitry.shevchenko
-' <summary> Сохранить строку в TXT файле </summary>
-' <param name="text"> Строка которую будем сохранять </param>
-' <param name="filename"> Полный путь к файлу в котором будем сохранять. Если файл не существует, то он будет создан </param>
+' Ñîçäàíî: 2020.02.27 12:05:58
+' Àâòîð: dmitry.shevchenko
+' <summary> Ñîõðàíèòü ñòðîêó â TXT ôàéëå </summary>
+' <param name="text"> Ñòðîêà êîòîðóþ áóäåì ñîõðàíÿòü </param>
+' <param name="filename"> Ïîëíûé ïóòü ê ôàéëó â êîòîðîì áóäåì ñîõðàíÿòü. Åñëè ôàéë íå ñóùåñòâóåò, òî îí áóäåò ñîçäàí </param>
 
-On Error GoTo sc_Global_String_To_Txt_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_String_To_Txt_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 Set FSO = CreateObject("scripting.filesystemobject")
@@ -105,29 +82,31 @@ Set textfile = Nothing
 Set FSO = Nothing
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_String_To_Txt_Error: ' Инструкции что делать при ошибке
+sc_Global_String_To_Txt_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_String_To_Txt") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_String_To_Txt", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Error_Log(ByVal errn As Object, _
                                ByVal modulename As String, _
-                               ByVal procname As String)
-' Создано: 2020.02.27 11:55:37
-' Автор: dmitry.shevchenko
-' <summary> Логирование ошибок </summary>
-' <param name="errn"> Перехваченная ошибка </param>
-' <param name="modulename"> Название моделя где была перехвачена ошибка </param>
-' <param name="procname"> Имя объекта в котором перехвачена ошибка </param>
+                               ByVal procname As String, _
+                               Optional ByVal MVersion As Long = 0)
+' Ñîçäàíî: 2020.02.27 11:55:37
+' Àâòîð: dmitry.shevchenko
+' <summary> Ëîãèðîâàíèå îøèáîê </summary>
+' <param name="errn"> Ïåðåõâà÷åííàÿ îøèáêà </param>
+' <param name="modulename"> Íàçâàíèå ìîäåëÿ ãäå áûëà ïåðåõâà÷åíà îøèáêà </param>
+' <param name="procname"> Èìÿ îáúåêòà â êîòîðîì ïåðåõâà÷åíà îøèáêà </param>
+' <param name="MVersion"> Âåðñèÿ òåêóùåãî ìîäóëÿ </param>
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-temp1$ = Now() & vbTab & ActiveWorkbook.Name & vbTab & Environ("COMPUTERNAME") & vbTab & Environ("USERNAME") & vbTab & modulename & vbTab & procname & vbTab & errn.Number & vbTab & Replace(Err.Description, vbNewLine, " | ")
+temp1$ = Now() & vbTab & ActiveWorkbook.Name & vbTab & Environ("COMPUTERNAME") & vbTab & Environ("USERNAME") & vbTab & modulename & vbTab & MVersion & vbTab & procname & vbTab & errn.Number & vbTab & Replace(Err.Description, vbNewLine, " | ")
 
-'temp2$ = ThisWorkbook.Path & "\Журнал ошибок " & Year(Now()) & "." & fn_Global_Add_Symbols(Month(Now), 2) & "." & fn_Global_Add_Symbols(Day(Now), 2) & ".txt"
-temp2$ = ThisWorkbook.Path & "\Журнал ошибок.txt"
+'temp2$ = ThisWorkbook.Path & "\Æóðíàë îøèáîê " & Year(Now()) & "." & fn_Global_Add_Symbols(Month(Now), 2) & "." & fn_Global_Add_Symbols(Day(Now), 2) & ".txt"
+temp2$ = ThisWorkbook.Path & "\Æóðíàë îøèáîê.txt"
 
 sc_Global_String_To_Txt text:=temp1, filename:=temp2
 
@@ -136,12 +115,12 @@ sc_Global_String_To_Txt text:=temp1, filename:=temp2
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Screen_Updating(ByVal Act As Boolean)
-' Создано: 2020.02.27 11:45:08
-' Автор: dmitry.shevchenko
-' <summary> Управление обновлением экрана </summary>
-' <param name="Act"> Метка совершаемого действия </param>
+' Ñîçäàíî: 2020.02.27 11:45:08
+' Àâòîð: dmitry.shevchenko
+' <summary> Óïðàâëåíèå îáíîâëåíèåì ýêðàíà </summary>
+' <param name="Act"> Ìåòêà ñîâåðøàåìîãî äåéñòâèÿ </param>
 
-On Error GoTo sc_Global_Screen_Updating_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Screen_Updating_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 Application.ScreenUpdating = Act
@@ -151,125 +130,125 @@ Application.DisplayAlerts = Act
 Application.EnableEvents = Act
 Application.DisplayStatusBar = Act
 If Act Then
-    Application.EnableCancelKey = xlDisabled
-    Application.Calculation = xlCalculationManual
-    Application.DisplayCommentIndicator = xlNoIndicator
-Else
     Application.EnableCancelKey = xlInterrupt
     Application.Calculation = xlCalculationAutomatic
     Application.DisplayCommentIndicator = xlCommentAndIndicator
+Else
+    Application.EnableCancelKey = xlDisabled
+    Application.Calculation = xlCalculationManual
+    Application.DisplayCommentIndicator = xlNoIndicator
 End If
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Screen_Updating_Error: ' Инструкции что делать при ошибке
+sc_Global_Screen_Updating_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Screen_Updating") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Screen_Updating", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Delete_Fantom_Row(ByVal tSheet As Object, _
                                        ByVal ColHead As String)
-' Создано: 2020.02.27 11:41:00
-' Автор: dmitry.shevchenko
-' <summary> Удалить первую пустую строку после таблицы. При вставке данных на лист появляется лишняя пустая строка </summary>
-' <param name="tSheet"> Лист на котором будем удалять фантомную строку </param>
-' <param name="ColHead"> Название колонки по которой будем определять границы таблицы. Колонка не должна сожержать пустых значений </param>
+' Ñîçäàíî: 2020.02.27 11:41:00
+' Àâòîð: dmitry.shevchenko
+' <summary> Óäàëèòü ïåðâóþ ïóñòóþ ñòðîêó ïîñëå òàáëèöû. Ïðè âñòàâêå äàííûõ íà ëèñò ïîÿâëÿåòñÿ ëèøíÿÿ ïóñòàÿ ñòðîêà </summary>
+' <param name="tSheet"> Ëèñò íà êîòîðîì áóäåì óäàëÿòü ôàíòîìíóþ ñòðîêó </param>
+' <param name="ColHead"> Íàçâàíèå êîëîíêè ïî êîòîðîé áóäåì îïðåäåëÿòü ãðàíèöû òàáëèöû. Êîëîíêà íå äîëæíà ñîæåðæàòü ïóñòûõ çíà÷åíèé </param>
 
-On Error GoTo sc_Global_Delete_Fantom_Row_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Delete_Fantom_Row_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-For i& = 1 To 1048576 ' Перебор строк на листе
+For i& = 1 To 1048576 ' Ïåðåáîð ñòðîê íà ëèñòå
 
-    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then Exit For ' При нахождении в строке исклмого заняения выходим из цикла
+    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then Exit For ' Ïðè íàõîæäåíèè â ñòðîêå èñêëìîãî çàíÿåíèÿ âûõîäèì èç öèêëà
     
 Next i
 
-sCol& = tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole).Column ' Находим номер колонки с искомым значением
-lRow& = tSheet.Range(tSheet.Cells(i, sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Находим в этой колонке пустую строку
-Rows(lRow & ":" & lRow).Delete Shift:=xlUp ' удаляем строку
+sCol& = tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole).Column ' Íàõîäèì íîìåð êîëîíêè ñ èñêîìûì çíà÷åíèåì
+lRow& = tSheet.Range(tSheet.Cells(i, sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Íàõîäèì â ýòîé êîëîíêå ïóñòóþ ñòðîêó
+Rows(lRow & ":" & lRow).Delete Shift:=xlUp ' óäàëÿåì ñòðîêó
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Delete_Fantom_Row_Error: ' Инструкции что делать при ошибке
+sc_Global_Delete_Fantom_Row_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_Fantom_Row") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_Fantom_Row", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Check_Column(ByVal aSheet As Object, _
                                   ByVal bText As String, _
                                   ByVal cRow As Long)
-' Создано: 2020.02.27 11:35:40
-' Автор: dmitry.shevchenko
-' <summary> Проверяет существует ли в таблице такая колонка, если да, то очищает ее от значений </summary>
-' <param name="aSheet"> Лист на кототором находится таблица </param>
-' <param name="bText"> Название проверяемой колонки </param>
-' <param name="cRow"> Номер строки на которой расположена "шапка" таблицы </param>
+' Ñîçäàíî: 2020.02.27 11:35:40
+' Àâòîð: dmitry.shevchenko
+' <summary> Ïðîâåðÿåò ñóùåñòâóåò ëè â òàáëèöå òàêàÿ êîëîíêà, åñëè äà, òî î÷èùàåò åå îò çíà÷åíèé </summary>
+' <param name="aSheet"> Ëèñò íà êîòîòîðîì íàõîäèòñÿ òàáëèöà </param>
+' <param name="bText"> Íàçâàíèå ïðîâåðÿåìîé êîëîíêè </param>
+' <param name="cRow"> Íîìåð ñòðîêè íà êîòîðîé ðàñïîëîæåíà "øàïêà" òàáëèöû </param>
 
-On Error GoTo sc_Global_Check_Column_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Check_Column_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-If Not aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole) Is Nothing Then ' ищем в указанной строке нужное значение
+If Not aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole) Is Nothing Then ' èùåì â óêàçàííîé ñòðîêå íóæíîå çíà÷åíèå
     
-    aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole).EntireColumn.ClearContents ' Если нашли колонку, то стираем все данные из нее
-    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("", , , xlWhole).Column).Value = bText ' Заново вписываем на лист имя колонки
+    aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole).EntireColumn.ClearContents ' Åñëè íàøëè êîëîíêó, òî ñòèðàåì âñå äàííûå èç íåå
+    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("", , , xlWhole).Column).Value = bText ' Çàíîâî âïèñûâàåì íà ëèñò èìÿ êîëîíêè
         
-Else ' Если колонка не существует
+Else ' Åñëè êîëîíêà íå ñóùåñòâóåò
     
-    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("").Column).Value = bText ' Ищем в указанной строке пустую ячейку и вписываем им колонки
+    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("").Column).Value = bText ' Èùåì â óêàçàííîé ñòðîêå ïóñòóþ ÿ÷åéêó è âïèñûâàåì èì êîëîíêè
     
 End If
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Check_Column_Error: ' Инструкции что делать при ошибке
+sc_Global_Check_Column_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Check_Column") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Check_Column", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Delete_File(ByVal filename As String)
-' Создано: 2020.02.27 11:31:56
-' Автор: dmitry.shevchenko
-' <summary> Удалить указанный файл </summary>
-' <param name="filename"> Полный путь к файлу </param>
+' Ñîçäàíî: 2020.02.27 11:31:56
+' Àâòîð: dmitry.shevchenko
+' <summary> Óäàëèòü óêàçàííûé ôàéë </summary>
+' <param name="filename"> Ïîëíûé ïóòü ê ôàéëó </param>
 
-On Error GoTo sc_Global_Delete_File_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Delete_File_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-Kill filename ' Удаляем файл
+Kill filename ' Óäàëÿåì ôàéë
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Delete_File_Error: ' Инструкции что делать при ошибке
+sc_Global_Delete_File_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_File") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_File", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_File_Done(ByVal filename As String)
-' Создано: 2020.02.27 11:29:44
-' Автор: dmitry.shevchenko
-' <summary> Переименовать обработанную выгрузку </summary>
-' <param name="filename"> Полныть путь к файлу </param>
+' Ñîçäàíî: 2020.02.27 11:29:44
+' Àâòîð: dmitry.shevchenko
+' <summary> Ïåðåèìåíîâàòü îáðàáîòàííóþ âûãðóçêó </summary>
+' <param name="filename"> Ïîëíûòü ïóòü ê ôàéëó </param>
 
-On Error GoTo sc_Global_File_Done_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_File_Done_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-newname = Left(filename, Len(filename) - InStr(StrReverse(filename), "\")) & "\" & Environ("USERNAME") & " " & Right(filename, InStr(StrReverse(filename), "\") - 1) ' Новое имя файла
-Name filename As newname ' Переименовываем вставляя в начало имени файла - имя юзера обработавшего файл
+newname = Left(filename, Len(filename) - InStr(StrReverse(filename), "\")) & "\" & Environ("USERNAME") & " " & Right(filename, InStr(StrReverse(filename), "\") - 1) ' Íîâîå èìÿ ôàéëà
+Name filename As newname ' Ïåðåèìåíîâûâàåì âñòàâëÿÿ â íà÷àëî èìåíè ôàéëà - èìÿ þçåðà îáðàáîòàâøåãî ôàéë
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_File_Done_Error: ' Инструкции что делать при ошибке
+sc_Global_File_Done_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_File_Done") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_File_Done", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
@@ -279,67 +258,67 @@ Public Sub sc_Global_Set_Data(ByVal nSheet As Object, _
                               ByVal dTable As Variant, _
                               ByVal nFormat As String, _
                               Optional ByVal checkcol As Boolean = False)
-' Создано: 2020.02.27 11:26:13
-' Автор: dmitry.shevchenko
-' <summary> Вставить данные из массива на лист </summary>
-' <param name="nSheet"> Лист на который будем вставлять данные </param>
-' <param name="fRow"> Номер строки с "шапкой" таблицы </param>
-' <param name="ColName"> Имя вставляемого столбца </param>
-' <param name="dTable"> Массив данных </param>
-' <param name="nFormat"> Формат вставки </param>
-' <param name="checkcol"> Метка проверки и очистки столбца </param>
+' Ñîçäàíî: 2020.02.27 11:26:13
+' Àâòîð: dmitry.shevchenko
+' <summary> Âñòàâèòü äàííûå èç ìàññèâà íà ëèñò </summary>
+' <param name="nSheet"> Ëèñò íà êîòîðûé áóäåì âñòàâëÿòü äàííûå </param>
+' <param name="fRow"> Íîìåð ñòðîêè ñ "øàïêîé" òàáëèöû </param>
+' <param name="ColName"> Èìÿ âñòàâëÿåìîãî ñòîëáöà </param>
+' <param name="dTable"> Ìàññèâ äàííûõ </param>
+' <param name="nFormat"> Ôîðìàò âñòàâêè </param>
+' <param name="checkcol"> Ìåòêà ïðîâåðêè è î÷èñòêè ñòîëáöà </param>
 
-On Error GoTo sc_Global_Set_Data_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Set_Data_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Проверяем колонку если метка = True
+If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Ïðîâåðÿåì êîëîíêó åñëè ìåòêà = True
 
 Dim cFor As Boolean: cFor = False
 
-Dim tCol As Long: tCol = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Ищем номер колонки куда будем вставлять данные
+Dim tCol As Long: tCol = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Èùåì íîìåð êîëîíêè êóäà áóäåì âñòàâëÿòü äàííûå
 
-Select Case nFormat ' Проверяем формат вставляемых данных
-        Case "Text" ' Текстовый формат
+Select Case nFormat ' Ïðîâåðÿåì ôîðìàò âñòàâëÿåìûõ äàííûõ
+        Case "Text" ' Òåêñòîâûé ôîðìàò
                 cformat = "@"
                 cFor = True
-        Case "All" ' Общий формат
+        Case "All" ' Îáùèé ôîðìàò
                 cformat = "General"
                 cFor = True
-        Case "Number" ' Целые числа
+        Case "Number" ' Öåëûå ÷èñëà
                 cformat = "0"
                 cFor = True
-        Case "0.00" ' Числа до сотых
+        Case "0.00" ' ×èñëà äî ñîòûõ
                 cformat = "0.00"
                 cFor = True
-        Case "Date" ' Дата
+        Case "Date" ' Äàòà
                 cformat = "m/d/yyyy"
                 cFor = True
-        Case "Money" ' Финансовый
+        Case "Money" ' Ôèíàíñîâûé
                 cformat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
                 cFor = True
 End Select
     
-If cFor Then nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)).NumberFormat = cformat ' диапазон куда будем вставлять преобразуем в нужный формат
-nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)) = dTable ' вставляем данные
+If cFor Then nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)).NumberFormat = cformat ' äèàïàçîí êóäà áóäåì âñòàâëÿòü ïðåîáðàçóåì â íóæíûé ôîðìàò
+nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)) = dTable ' âñòàâëÿåì äàííûå
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Set_Data_Error: ' Инструкции что делать при ошибке
+sc_Global_Set_Data_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Set_Data") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Set_Data", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Clear_Sheet(ByVal tSheet As Object, _
                                  ByVal mRow As Long)
-' Создано: 2020.02.27 11:19:35
-' Автор: dmitry.shevchenko
-' <summary> Очистка листа от данных </summary>
-' <param name="tSheet"> Лист на котором будем производить очистку </param>
-' <param name="mRow"> Номер строки с котрой начать очистку </param>
+' Ñîçäàíî: 2020.02.27 11:19:35
+' Àâòîð: dmitry.shevchenko
+' <summary> Î÷èñòêà ëèñòà îò äàííûõ </summary>
+' <param name="tSheet"> Ëèñò íà êîòîðîì áóäåì ïðîèçâîäèòü î÷èñòêó </param>
+' <param name="mRow"> Íîìåð ñòðîêè ñ êîòðîé íà÷àòü î÷èñòêó </param>
 
-On Error GoTo sc_Global_Clear_Sheet_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Clear_Sheet_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 lRow& = IIf(tSheet.UsedRange.Rows.Count > mRow, tSheet.UsedRange.Rows.Count, mRow + 1)
@@ -347,40 +326,40 @@ lRow& = IIf(tSheet.UsedRange.Rows.Count > mRow, tSheet.UsedRange.Rows.Count, mRo
 tSheet.Rows(mRow & ":" & lRow).Delete Shift:=xlUp
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Clear_Sheet_Error: ' Инструкции что делать при ошибке
+sc_Global_Clear_Sheet_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Clear_Sheet") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Clear_Sheet", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Off_All_Filters()
-' Создано: 2020.02.27 11:10:15
-' Автор: dmitry.shevchenko
-' <summary> Снять все фильтра </summary>
+' Ñîçäàíî: 2020.02.27 11:10:15
+' Àâòîð: dmitry.shevchenko
+' <summary> Ñíÿòü âñå ôèëüòðà </summary>
 
-On Error GoTo sc_Global_Off_All_Filters_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Off_All_Filters_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 If ActiveSheet.EnableAutoFilter Then ActiveSheet.ShowAllData
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Off_All_Filters_Error: ' Инструкции что делать при ошибке
+sc_Global_Off_All_Filters_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Off_All_Filters") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Off_All_Filters", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Sub sc_Global_Return_Filters(ByRef temp() As String)
-' Создано: 2020.02.27 11:06:55
-' Автор: dmitry.shevchenko
-' <summary> Вернуть фильтр в исходное состояние </summary>
-' <param name="temp"> Массив с значениями фильтров </param>
+' Ñîçäàíî: 2020.02.27 11:06:55
+' Àâòîð: dmitry.shevchenko
+' <summary> Âåðíóòü ôèëüòð â èñõîäíîå ñîñòîÿíèå </summary>
+' <param name="temp"> Ìàññèâ ñ çíà÷åíèÿìè ôèëüòðîâ </param>
 
-On Error GoTo sc_Global_Return_Filters_Error ' При ошибке переход по метке
+On Error GoTo sc_Global_Return_Filters_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 For i = LBound(temp) To UBound(temp)
@@ -396,52 +375,52 @@ For i = LBound(temp) To UBound(temp)
 Next i
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-sc_Global_Return_Filters_Error: ' Инструкции что делать при ошибке
+sc_Global_Return_Filters_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Return_Filters") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Return_Filters", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Add_Symbols(ByVal aValue As String, _
                                       ByVal bLength As Integer, _
                                       Optional ByVal sumb As String = "0") As String
-' Создано: 2020.02.26 18:06:21
-' Автор: dmitry.shevchenko
-' <summary> Добавить к указанному значению в начало символы </summary>
-' <param name="aValue"> Значение к которому нужно добавить символы </param>
-' <param name="bLength"> Конечная длина строки которая должна получиться </param>
-' <param name="sumb"> Символ который будем добавлять в начало. По умолчанию ноль </param>
-' <returns> Значение с добавленными символами </return>
+' Ñîçäàíî: 2020.02.26 18:06:21
+' Àâòîð: dmitry.shevchenko
+' <summary> Äîáàâèòü ê óêàçàííîìó çíà÷åíèþ â íà÷àëî ñèìâîëû </summary>
+' <param name="aValue"> Çíà÷åíèå ê êîòîðîìó íóæíî äîáàâèòü ñèìâîëû </param>
+' <param name="bLength"> Êîíå÷íàÿ äëèíà ñòðîêè êîòîðàÿ äîëæíà ïîëó÷èòüñÿ </param>
+' <param name="sumb"> Ñèìâîë êîòîðûé áóäåì äîáàâëÿòü â íà÷àëî. Ïî óìîë÷àíèþ íîëü </param>
+' <returns> Çíà÷åíèå ñ äîáàâëåííûìè ñèìâîëàìè </return>
 
-On Error GoTo fn_Global_Add_Symbols_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Add_Symbols_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-fn_Global_Add_Symbols = aValue ' Присвоить значение
+fn_Global_Add_Symbols = aValue ' Ïðèñâîèòü çíà÷åíèå
 
-If Len(aValue) < bLength Then ' Проверка количество символов
+If Len(aValue) < bLength Then ' Ïðîâåðêà êîëè÷åñòâî ñèìâîëîâ
 
-    For i = 1 To bLength - Len(aValue) ' Инициализация циклa
+    For i = 1 To bLength - Len(aValue) ' Èíèöèàëèçàöèÿ öèêëa
     
-        fn_Global_Add_Symbols = sumb & fn_Global_Add_Symbols ' Добавляем нули
+        fn_Global_Add_Symbols = sumb & fn_Global_Add_Symbols ' Äîáàâëÿåì íóëè
         
     Next
     
 End If
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Add_Symbols_Error: ' Инструкции что делать при ошибке
+fn_Global_Add_Symbols_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Add_Symbols") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Add_Symbols", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_ExtractUniq(rng As Range) ' Из указанного диапазона извлечь уникальные значения
+Public Function fn_Global_ExtractUniq(rng As Range) ' Èç óêàçàííîãî äèàïàçîíà èçâëå÷ü óíèêàëüíûå çíà÷åíèÿ
 
-On Error GoTo fn_Global_ExtractUniq_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_ExtractUniq_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 Dim arr(), i&, S$, x
@@ -468,11 +447,11 @@ End With
 fn_Global_ExtractUniq = arr()
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы процедуры
+Exit Function ' Çàâåðøåíèå ðàáîòû ïðîöåäóðû
 
-fn_Global_ExtractUniq_Error: ' Что делать при ошибке
+fn_Global_ExtractUniq_Error: ' ×òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_ExtractUniq") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_ExtractUniq", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
@@ -480,16 +459,16 @@ Public Function fn_Global_Refresh_Data(ByVal DataSheet As Object, _
                                        ByVal DataTable As String, _
                                        ByVal OptionName As String, _
                                        Optional ByVal ControlTime As String = "09:00:00") As Boolean
-' Создано: 2020.02.27 11:00:47
-' Автор: dmitry.shevchenko
-' <summary> Обновить таблицу подключенных данных </summary>
-' <param name="DataSheet"> Лист на котором расположена таблица </param>
-' <param name="DataTable"> Таблица которую нужно обновить </param>
-' <param name="OptionName"> Имя опции с меткой последнего обновления </param>
-' <param name="ControlTime"> Контрольное время обновления </param>
-' <returns> True - данные обновлены, False - не обновлены </return>
+' Ñîçäàíî: 2020.02.27 11:00:47
+' Àâòîð: dmitry.shevchenko
+' <summary> Îáíîâèòü òàáëèöó ïîäêëþ÷åííûõ äàííûõ </summary>
+' <param name="DataSheet"> Ëèñò íà êîòîðîì ðàñïîëîæåíà òàáëèöà </param>
+' <param name="DataTable"> Òàáëèöà êîòîðóþ íóæíî îáíîâèòü </param>
+' <param name="OptionName"> Èìÿ îïöèè ñ ìåòêîé ïîñëåäíåãî îáíîâëåíèÿ </param>
+' <param name="ControlTime"> Êîíòðîëüíîå âðåìÿ îáíîâëåíèÿ </param>
+' <returns> True - äàííûå îáíîâëåíû, False - íå îáíîâëåíû </return>
 
-On Error GoTo fn_Global_Refresh_Data_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Refresh_Data_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 refreshmark$ = fn_Global_Get_Option(OptionName)
@@ -498,116 +477,116 @@ Dim resreshtime As Boolean
 
 If CDate(refreshmark) < Date Or (CDate(Now - Date) > CDate(ControlTime) And CDate(refreshmark) < CDate(ControlTime)) Then
 
-    DataSheet.Visible = xlSheetVisible ' Делаем видимым лист
-    DataSheet.Activate ' Переходим на лист
-    refreshcheck = fn_Global_Refresh_Table(Range(DataTable).ListObject.QueryTable) ' Обновляем таблицу с данными
-    If refreshcheck Then ' Проверяем что действительно обновилось
-        refreshtime = fn_Global_Set_Option(OptionName, Now()) ' Если удалось обновиться то сохраняем данные
+    DataSheet.Visible = xlSheetVisible ' Äåëàåì âèäèìûì ëèñò
+    DataSheet.Activate ' Ïåðåõîäèì íà ëèñò
+    refreshcheck = fn_Global_Refresh_Table(Range(DataTable).ListObject.QueryTable) ' Îáíîâëÿåì òàáëèöó ñ äàííûìè
+    If refreshcheck Then ' Ïðîâåðÿåì ÷òî äåéñòâèòåëüíî îáíîâèëîñü
+        refreshtime = fn_Global_Set_Option(OptionName, Now()) ' Åñëè óäàëîñü îáíîâèòüñÿ òî ñîõðàíÿåì äàííûå
     End If
 
 End If
 
-fn_Global_Refresh_Data = True ' Присваеваем возвращаемое значение
+fn_Global_Refresh_Data = True ' Ïðèñâàåâàåì âîçâðàùàåìîå çíà÷åíèå
 
-DataSheet.Visible = xlSheetHidden ' Скрываем лист с реестром
+DataSheet.Visible = xlSheetHidden ' Ñêðûâàåì ëèñò ñ ðååñòðîì
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Refresh_Data_Error: ' Инструкции что делать при ошибке
+fn_Global_Refresh_Data_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Data") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Data", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 
 Public Function fn_Global_Refresh_Table(ByVal qTable As Object) As Boolean
-' Создано: 2020.02.27 10:42:31
-' Автор: dmitry.shevchenko
-' <summary> Обновить таблицу подключения </summary>
-' <param name="qTable"> Таблица подключения </param>
-' <returns> True - если удалось обновить, False - если не удалось </return>
+' Ñîçäàíî: 2020.02.27 10:42:31
+' Àâòîð: dmitry.shevchenko
+' <summary> Îáíîâèòü òàáëèöó ïîäêëþ÷åíèÿ </summary>
+' <param name="qTable"> Òàáëèöà ïîäêëþ÷åíèÿ </param>
+' <returns> True - åñëè óäàëîñü îáíîâèòü, False - åñëè íå óäàëîñü </return>
 
-fn_Global_Refresh_Table = False ' Дефолтное значение
-Dim try As Integer: try = 0 ' Счетчик обновлений
+fn_Global_Refresh_Table = False ' Äåôîëòíîå çíà÷åíèå
+Dim try As Integer: try = 0 ' Ñ÷åò÷èê îáíîâëåíèé
 
-On Error GoTo fn_Global_Refresh_Table_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Refresh_Table_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 mainaction:
 
-qTable.Refresh BackgroundQuery:=False ' Обновляем даты заказов
-fn_Global_Refresh_Table = True ' Устанавливаем положительное возвращаемое значение
+qTable.Refresh BackgroundQuery:=False ' Îáíîâëÿåì äàòû çàêàçîâ
+fn_Global_Refresh_Table = True ' Óñòàíàâëèâàåì ïîëîæèòåëüíîå âîçâðàùàåìîå çíà÷åíèå
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы процедуры
+Exit Function ' Çàâåðøåíèå ðàáîòû ïðîöåäóðû
 
-fn_Global_Refresh_Table_Error: ' Что делать при ошибке
+fn_Global_Refresh_Table_Error: ' ×òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Table") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Table", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
-Application.Wait Time:=Now + TimeSerial(0, 1, 0) ' Ожидаем одну минуту
-try = try + 1 ' Увеличиваем счетчик попыток
-If try < 5 Then GoTo mainaction ' Если совершено менее 5 попыток то пробуем еще раз
+Application.Wait Time:=Now + TimeSerial(0, 1, 0) ' Îæèäàåì îäíó ìèíóòó
+try = try + 1 ' Óâåëè÷èâàåì ñ÷åò÷èê ïîïûòîê
+If try < 5 Then GoTo mainaction ' Åñëè ñîâåðøåíî ìåíåå 5 ïîïûòîê òî ïðîáóåì åùå ðàç
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Get_Edges(ByVal tSheet As Object, _
                                     ByVal ColHead As String) As Variant
-' Создано: 2020.02.27 10:42:31
-' Автор: dmitry.shevchenko
-' <summary> Определить границы таблицы </summary>
-' <param name="tSheet"> Лист на котором расположена таблица </param>
-' <param name="ColHead"> Имя колонки по которой будем определять границы таблицы. Не должна сожержать пустых значений </param>
-' <returns> Массив из 2 элементов: верхней границы с "шапкой" таблицы и первой пустой строки после таблицы </return>
+' Ñîçäàíî: 2020.02.27 10:42:31
+' Àâòîð: dmitry.shevchenko
+' <summary> Îïðåäåëèòü ãðàíèöû òàáëèöû </summary>
+' <param name="tSheet"> Ëèñò íà êîòîðîì ðàñïîëîæåíà òàáëèöà </param>
+' <param name="ColHead"> Èìÿ êîëîíêè ïî êîòîðîé áóäåì îïðåäåëÿòü ãðàíèöû òàáëèöû. Íå äîëæíà ñîæåðæàòü ïóñòûõ çíà÷åíèé </param>
+' <returns> Ìàññèâ èç 2 ýëåìåíòîâ: âåðõíåé ãðàíèöû ñ "øàïêîé" òàáëèöû è ïåðâîé ïóñòîé ñòðîêè ïîñëå òàáëèöû </return>
 
-On Error GoTo fn_Global_Get_Edges_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Get_Edges_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-Dim borders(1) As Long ' Массив для запоминания границ таблицы
+Dim borders(1) As Long ' Ìàññèâ äëÿ çàïîìèíàíèÿ ãðàíèö òàáëèöû
 
-For i& = 1 To 1048576 ' Перебор строк на указанном листе
+For i& = 1 To 1048576 ' Ïåðåáîð ñòðîê íà óêàçàííîì ëèñòå
 
-    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then borders(0) = i: Exit For ' Ищем в строке название колонки, при нахождении запоминаем номер строки и прерываем цикл
+    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then borders(0) = i: Exit For ' Èùåì â ñòðîêå íàçâàíèå êîëîíêè, ïðè íàõîæäåíèè çàïîìèíàåì íîìåð ñòðîêè è ïðåðûâàåì öèêë
     
 Next i
 
-sCol& = tSheet.Range(borders(0) & ":" & borders(0)).Find(ColHead, , , xlWhole).Column ' Ищем номер колонки
-borders(1) = tSheet.Range(tSheet.Cells(borders(0), sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Ищем пустую строку в этой колонке
+sCol& = tSheet.Range(borders(0) & ":" & borders(0)).Find(ColHead, , , xlWhole).Column ' Èùåì íîìåð êîëîíêè
+borders(1) = tSheet.Range(tSheet.Cells(borders(0), sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Èùåì ïóñòóþ ñòðîêó â ýòîé êîëîíêå
 
-fn_Global_Get_Edges = borders ' Присваеваем возвращаемому значению массив с границами таблицы
+fn_Global_Get_Edges = borders ' Ïðèñâàåâàåì âîçâðàùàåìîìó çíà÷åíèþ ìàññèâ ñ ãðàíèöàìè òàáëèöû
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Get_Edges_Error: ' Инструкции что делать при ошибке
+fn_Global_Get_Edges_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Edges") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Edges", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 
 Public Function fnG_FilenamesCollection(ByVal FolderPath As String, Optional ByVal Mask As String = "", Optional ByVal SearchDeep As Long = 999) As Object
-    On Error Resume Next ' Защита от ошибок
-    Set fnG_FilenamesCollection = New Collection ' Создаем коллекцию для имен файлов
-    Set FSO = CreateObject("Scripting.FileSystemObject") ' Создаем объект взаимодействия с файловой системой
-    fnG_GetAllFileNamesUsingFSOs FolderPath, Mask, FSO, fnG_FilenamesCollection, SearchDeep ' Производим поиск файлов в указанной папке, по указанной маске поиска
-    Set FSO = Nothing: Application.StatusBar = False ' обнуляем объект для очиськи памяти
+    On Error Resume Next ' Çàùèòà îò îøèáîê
+    Set fnG_FilenamesCollection = New Collection ' Ñîçäàåì êîëëåêöèþ äëÿ èìåí ôàéëîâ
+    Set FSO = CreateObject("Scripting.FileSystemObject") ' Ñîçäàåì îáúåêò âçàèìîäåéñòâèÿ ñ ôàéëîâîé ñèñòåìîé
+    fnG_GetAllFileNamesUsingFSOs FolderPath, Mask, FSO, fnG_FilenamesCollection, SearchDeep ' Ïðîèçâîäèì ïîèñê ôàéëîâ â óêàçàííîé ïàïêå, ïî óêàçàííîé ìàñêå ïîèñêà
+    Set FSO = Nothing: Application.StatusBar = False ' îáíóëÿåì îáúåêò äëÿ î÷èñüêè ïàìÿòè
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
-Public Function fnG_GetAllFileNamesUsingFSOs(ByVal FolderPath As String, ByVal Mask As String, ByRef FSO, ByRef FileNamesColl As Collection, ByVal SearchDeep As Long) ' Поиск файлов по маске в указанной папке
-    On Error Resume Next: Set curfold = FSO.GetFolder(FolderPath) ' Хащита от ошибок
-    If Not curfold Is Nothing Then ' Проверяем что папка существует и ы ней есть что-то
-        For Each fil In curfold.Files ' Перебор элемеетов в папке
-            If fil.Path Like "*" & Mask & "*" Then FileNamesColl.Add fil.Path ' Сравнение найденого элемента с маской поиска
+Public Function fnG_GetAllFileNamesUsingFSOs(ByVal FolderPath As String, ByVal Mask As String, ByRef FSO, ByRef FileNamesColl As Collection, ByVal SearchDeep As Long) ' Ïîèñê ôàéëîâ ïî ìàñêå â óêàçàííîé ïàïêå
+    On Error Resume Next: Set curfold = FSO.GetFolder(FolderPath) ' Õàùèòà îò îøèáîê
+    If Not curfold Is Nothing Then ' Ïðîâåðÿåì ÷òî ïàïêà ñóùåñòâóåò è û íåé åñòü ÷òî-òî
+        For Each fil In curfold.Files ' Ïåðåáîð ýëåìååòîâ â ïàïêå
+            If fil.Path Like "*" & Mask & "*" Then FileNamesColl.Add fil.Path ' Ñðàâíåíèå íàéäåíîãî ýëåìåíòà ñ ìàñêîé ïîèñêà
         Next
-        SearchDeep = SearchDeep - 1 ' Уменьшаем глубину поиска
+        SearchDeep = SearchDeep - 1 ' Óìåíüøàåì ãëóáèíó ïîèñêà
         If SearchDeep Then
             For Each sfol In curfold.SubFolders
                 fnG_GetAllFileNamesUsingFSOs sfol.Path, Mask, FSO, FileNamesColl, SearchDeep
             Next
         End If
-        Set fil = Nothing: Set curfold = Nothing ' Удаляем объекты очищаем память
+        Set fil = Nothing: Set curfold = Nothing ' Óäàëÿåì îáúåêòû î÷èùàåì ïàìÿòü
     End If
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
@@ -616,153 +595,153 @@ Public Function fn_Global_Get_Data(ByVal nSheet As Object, _
                                    ByVal lRow As Long, _
                                    ByVal ColName As String, _
                                    Optional ByVal checkcol As Boolean = False) As Variant
-' Создано: 2020.02.27 10:32:19
-' Автор: dmitry.shevchenko
-' <summary> Данные с листа отправить в массив </summary>
-' <param name="nSheet"> Лист с которого будем получать данные </param>
-' <param name="fRow"> Первая строка на листе где шапка таблицы </param>
-' <param name="lRow"> Первая пустая строка после окончания таблицы </param>
-' <param name="ColName"> Имя столбца из которого будем брать данные </param>
-' <param name="checkcol"> Маркер нужно ли проверять наличие колонки и очищать ее </param>
-' <returns> Двумерный массив данных с листа </return>
+' Ñîçäàíî: 2020.02.27 10:32:19
+' Àâòîð: dmitry.shevchenko
+' <summary> Äàííûå ñ ëèñòà îòïðàâèòü â ìàññèâ </summary>
+' <param name="nSheet"> Ëèñò ñ êîòîðîãî áóäåì ïîëó÷àòü äàííûå </param>
+' <param name="fRow"> Ïåðâàÿ ñòðîêà íà ëèñòå ãäå øàïêà òàáëèöû </param>
+' <param name="lRow"> Ïåðâàÿ ïóñòàÿ ñòðîêà ïîñëå îêîí÷àíèÿ òàáëèöû </param>
+' <param name="ColName"> Èìÿ ñòîëáöà èç êîòîðîãî áóäåì áðàòü äàííûå </param>
+' <param name="checkcol"> Ìàðêåð íóæíî ëè ïðîâåðÿòü íàëè÷èå êîëîíêè è î÷èùàòü åå </param>
+' <returns> Äâóìåðíûé ìàññèâ äàííûõ ñ ëèñòà </return>
 
-On Error GoTo fn_Global_Get_Data_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Get_Data_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Если стоит индикатор проверки колонки, то выполняем ее
+If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Åñëè ñòîèò èíäèêàòîð ïðîâåðêè êîëîíêè, òî âûïîëíÿåì åå
 
-tCol& = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Получаем номер колонки
-fn_Global_Get_Data = nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(lRow, tCol)) ' Берем данные
+tCol& = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Ïîëó÷àåì íîìåð êîëîíêè
+fn_Global_Get_Data = nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(lRow, tCol)) ' Áåðåì äàííûå
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Get_Data_Error: ' Инструкции что делать при ошибке
+fn_Global_Get_Data_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Data") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Data", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Get_Id(ByVal arr As Variant, _
                                  ByVal searchkey As String) As Long
-' Создано: 2020.02.26 18:00:20
-' Автор: dmitry.shevchenko
-' <summary> Получить индекс значения в массиве </summary>
-' <param name="arr"> Массив в котором будем искать индекс элемента </param>
-' <param name="searchkey"> Элемент индекс которого будем искать </param>
-' <returns> Индекс элемента в массиве </return>
+' Ñîçäàíî: 2020.02.26 18:00:20
+' Àâòîð: dmitry.shevchenko
+' <summary> Ïîëó÷èòü èíäåêñ çíà÷åíèÿ â ìàññèâå </summary>
+' <param name="arr"> Ìàññèâ â êîòîðîì áóäåì èñêàòü èíäåêñ ýëåìåíòà </param>
+' <param name="searchkey"> Ýëåìåíò èíäåêñ êîòîðîãî áóäåì èñêàòü </param>
+' <returns> Èíäåêñ ýëåìåíòà â ìàññèâå </return>
 
-On Error GoTo fn_Global_Get_Id_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Get_Id_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-For i& = LBound(arr) To UBound(arr) ' цикл перебора элементов массива
+For i& = LBound(arr) To UBound(arr) ' öèêë ïåðåáîðà ýëåìåíòîâ ìàññèâà
 
-    If arr(i) = searchkey Then fn_Global_Get_Id = i + 1: Exit Function ' Сравнение элента с искомым значением. При совпадении выход из цикла. Индекс элемента увеличиваем на 1 т.к. массив начинается с 0
+    If arr(i) = searchkey Then fn_Global_Get_Id = i + 1: Exit Function ' Ñðàâíåíèå ýëåíòà ñ èñêîìûì çíà÷åíèåì. Ïðè ñîâïàäåíèè âûõîä èç öèêëà. Èíäåêñ ýëåìåíòà óâåëè÷èâàåì íà 1 ò.ê. ìàññèâ íà÷èíàåòñÿ ñ 0
 
 Next i
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Get_Id_Error: ' Инструкции что делать при ошибке
+fn_Global_Get_Id_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Id") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Id", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Set_Option(ByVal param As String, _
                                      ByVal valstring As String) As Boolean
-' Создано: 2020.02.26 17:42:29
-' Автор: dmitry.shevchenko
-' <summary> Сохранить значение опции. Для этого в книге должен быть лист с именем "Опции", на котором в столбце "А" должны быть названия опций, а в столбце "В" - значения </summary>
-' <param name="param"> Название опции </param>
-' <param name="valstring"> Значение опции </param>
-' <returns> True - если удалось сохранить значение опции. False - если не удалось </return>
+' Ñîçäàíî: 2020.02.26 17:42:29
+' Àâòîð: dmitry.shevchenko
+' <summary> Ñîõðàíèòü çíà÷åíèå îïöèè. Äëÿ ýòîãî â êíèãå äîëæåí áûòü ëèñò ñ èìåíåì "Îïöèè", íà êîòîðîì â ñòîëáöå "À" äîëæíû áûòü íàçâàíèÿ îïöèé, à â ñòîëáöå "Â" - çíà÷åíèÿ </summary>
+' <param name="param"> Íàçâàíèå îïöèè </param>
+' <param name="valstring"> Çíà÷åíèå îïöèè </param>
+' <returns> True - åñëè óäàëîñü ñîõðàíèòü çíà÷åíèå îïöèè. False - åñëè íå óäàëîñü </return>
 
-On Error GoTo fn_Global_Set_Option_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Set_Option_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-fn_Global_Set_Option = False ' Значение по умолчанию
+fn_Global_Set_Option = False ' Çíà÷åíèå ïî óìîë÷àíèþ
 
-If Not Worksheets("Опции").Range("A:A").Find(param, , , xlWhole) Is Nothing Then ' Поиск такой опции
+If Not Worksheets("Îïöèè").Range("A:A").Find(param, , , xlWhole) Is Nothing Then ' Ïîèñê òàêîé îïöèè
 
-    Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value = valstring ' Если опция найдена, то присваеваем новое значние
+    Worksheets("Îïöèè").Cells(Worksheets("Îïöèè").Range("A:A").Find(param, , , xlWhole).Row, 2).Value = valstring ' Åñëè îïöèÿ íàéäåíà, òî ïðèñâàåâàåì íîâîå çíà÷íèå
     
 Else
 
-    nRow& = Worksheets("Опции").Range("A:A").Find("", , , xlWhole).Row ' Если опция не найдена, ищем пустую строку
-    Worksheets("Опции").Cells(nRow, 1).Value = param ' Вписываем название опции
-    Worksheets("Опции").Cells(nRow, 2).Value = valstring ' Вписываем значение опции
+    nRow& = Worksheets("Îïöèè").Range("A:A").Find("", , , xlWhole).Row ' Åñëè îïöèÿ íå íàéäåíà, èùåì ïóñòóþ ñòðîêó
+    Worksheets("Îïöèè").Cells(nRow, 1).Value = param ' Âïèñûâàåì íàçâàíèå îïöèè
+    Worksheets("Îïöèè").Cells(nRow, 2).Value = valstring ' Âïèñûâàåì çíà÷åíèå îïöèè
     
 End If
 
-fn_Global_Set_Option = True ' Присваеваем положительное возвращаемое значение означающее что значение опции сохранено
+fn_Global_Set_Option = True ' Ïðèñâàåâàåì ïîëîæèòåëüíîå âîçâðàùàåìîå çíà÷åíèå îçíà÷àþùåå ÷òî çíà÷åíèå îïöèè ñîõðàíåíî
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Set_Option_Error: ' Инструкции что делать при ошибке
+fn_Global_Set_Option_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Set_Option") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Set_Option", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Get_Option(ByVal param As String) As String
-' Создано: 2020.02.26 17:18:19
-' Автор: dmitry.shevchenko
-' <summary> Получить значение опции по ее имени. Для этого в книге должен существовать лист и именем "Опции", в колонке "А" должны быть имена опций, а в колонке "В" - значения опций </summary>
-' <param name="param"> Название опции значение которой нужно получить </param>
-' <returns> Строку сожержащую значение опции </return>
+' Ñîçäàíî: 2020.02.26 17:18:19
+' Àâòîð: dmitry.shevchenko
+' <summary> Ïîëó÷èòü çíà÷åíèå îïöèè ïî åå èìåíè. Äëÿ ýòîãî â êíèãå äîëæåí ñóùåñòâîâàòü ëèñò è èìåíåì "Îïöèè", â êîëîíêå "À" äîëæíû áûòü èìåíà îïöèé, à â êîëîíêå "Â" - çíà÷åíèÿ îïöèé </summary>
+' <param name="param"> Íàçâàíèå îïöèè çíà÷åíèå êîòîðîé íóæíî ïîëó÷èòü </param>
+' <returns> Ñòðîêó ñîæåðæàùóþ çíà÷åíèå îïöèè </return>
 
-On Error GoTo fn_Global_Get_Option_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Get_Option_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-fn_Global_Get_Option = "Опция не получена!" ' Значение по умолчанию
+fn_Global_Get_Option = "Îïöèÿ íå ïîëó÷åíà!" ' Çíà÷åíèå ïî óìîë÷àíèþ
 
-fn_Global_Get_Option = Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value ' Поиск значения
+fn_Global_Get_Option = Worksheets("Îïöèè").Cells(Worksheets("Îïöèè").Range("A:A").Find(param, , , xlWhole).Row, 2).Value ' Ïîèñê çíà÷åíèÿ
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Get_Option_Error: ' Инструкции что делать при ошибке
+fn_Global_Get_Option_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Option") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Option", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Open_File_Read_Only(ByVal file As String) As Boolean
-' Создано: 2020.02.26 17:25:13
-' Автор: dmitry.shevchenko
-' <summary> Открыть файл под чтением </summary>
-' <param name="file"> Полный путь к файлу </param>
-' <returns> True - если получилось открыть файл. False - если не получилось </return>
+' Ñîçäàíî: 2020.02.26 17:25:13
+' Àâòîð: dmitry.shevchenko
+' <summary> Îòêðûòü ôàéë ïîä ÷òåíèåì </summary>
+' <param name="file"> Ïîëíûé ïóòü ê ôàéëó </param>
+' <returns> True - åñëè ïîëó÷èëîñü îòêðûòü ôàéë. False - åñëè íå ïîëó÷èëîñü </return>
 
-On Error GoTo fn_Global_Open_File_Read_Only_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Open_File_Read_Only_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-fn_Global_Open_File_Read_Only = False ' Значение по умолчанию для проверки открытия файла
+fn_Global_Open_File_Read_Only = False ' Çíà÷åíèå ïî óìîë÷àíèþ äëÿ ïðîâåðêè îòêðûòèÿ ôàéëà
 
-Workbooks.Open filename:=file, Format:=6, Delimiter:=";", Local:=True, ReadOnly:=True ' Открываем файл под чтением
+Workbooks.Open filename:=file, Format:=6, Delimiter:=";", Local:=True, ReadOnly:=True ' Îòêðûâàåì ôàéë ïîä ÷òåíèåì
 
-fn_Global_Open_File_Read_Only = True ' Значение для проверки открытия файла
+fn_Global_Open_File_Read_Only = True ' Çíà÷åíèå äëÿ ïðîâåðêè îòêðûòèÿ ôàéëà
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Open_File_Read_Only_Error: ' Инструкции что делать при ошибке
+fn_Global_Open_File_Read_Only_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Open_File_Read_Only") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Open_File_Read_Only", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
 Public Function fn_Global_Filter_Vals() As Variant
-' Создано: 2020.02.26 17:09:26
-' Автор: dmitry.shevchenko
-' <summary> Получить список значений установленных фильтров </summary>
-' <returns> Массив строк содержащий значения установленных фильтров. Размер массива будет соответствовать количеству колонок. Если значений несколько, то они будут разделены запятой с пробелом </return>
+' Ñîçäàíî: 2020.02.26 17:09:26
+' Àâòîð: dmitry.shevchenko
+' <summary> Ïîëó÷èòü ñïèñîê çíà÷åíèé óñòàíîâëåííûõ ôèëüòðîâ </summary>
+' <returns> Ìàññèâ ñòðîê ñîäåðæàùèé çíà÷åíèÿ óñòàíîâëåííûõ ôèëüòðîâ. Ðàçìåð ìàññèâà áóäåò ñîîòâåòñòâîâàòü êîëè÷åñòâó êîëîíîê. Åñëè çíà÷åíèé íåñêîëüêî, òî îíè áóäóò ðàçäåëåíû çàïÿòîé ñ ïðîáåëîì </return>
 
-On Error GoTo fn_Global_Filter_Vals_Error ' При ошибке переход по метке
+On Error GoTo fn_Global_Filter_Vals_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
 Dim fil As Object: Set fil = ActiveSheet.AutoFilter
@@ -797,11 +776,48 @@ Next
 fn_Global_Filter_Vals = vals
 
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Filter_Vals_Error: ' Инструкции что делать при ошибке
+fn_Global_Filter_Vals_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Filter_Vals") ' Вызов обработчика ошибок
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Filter_Vals", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Global_Between_To_Dates(ByVal CheckDate As String, _
+                                           ByVal FirstDate As String, _
+                                           ByVal SecondDate As String) As Variant
+' Ñîçäàíî: 2020.03.05 14:37:34
+' Àâòîð: dmitry.shevchenko
+' <summary> Ñðàâíåíèå äàò </summary>
+' <param name="CheckDate"> Ïðîâåðÿåìàÿ äàòà </param>
+' <param name="FirstDate"> Äàòà íà÷àëà </param>
+' <param name="SecondDate"> Äàòà îêîí÷àíèÿ </param>
+' <returns> Ìàññèâ èç äâóõ ýëåìåíòîâ - True/False è êîììåíòàðèÿ </return>
+
+On Error GoTo fn_Global_Between_To_Dates_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+ReDim result(1 To 2) As Variant: result(1) = False: result(2) = "Ïî óìîë÷àíèþ"
+
+If CDate(CheckDate) < CDate(FirstDate) Then
+    result(2) = "Ðàíî"
+ElseIf CDate(CheckDate) > CDate(SecondDate) Then
+    result(2) = "Ïîçäíî"
+Else
+    result(1) = True
+    result(2) = "Îê"
+End If
+
+fn_Global_Between_To_Dates = result
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Global_Between_To_Dates_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Between_To_Dates", ModuleVersion) ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+
