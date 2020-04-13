@@ -746,12 +746,21 @@ Public Sub sc_Error_Logger(ByVal objError As Object, _
                            ByVal strMethod As String, _
                            Optional ByVal o_douVersion As Double = "0")
 
-'On Error Resume Next ' Игнорирование ошибки
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim strText As String ' Записываемый текст
+Dim strFile As String ' Имя файла
 ' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-    Dim strText As String, strFile As String
-    
-    strText = Now() & vbTab & ActiveWorkbook.Name & vbTab & Environ("COMPUTERNAME") & vbTab & Environ("USERNAME") & vbTab & strModule & vbTab & o_douVersion & vbTab & strMethod & vbTab & objError.Number & vbTab & Replace(objError.Description, vbNewLine, " | ") & vbTab & objError.Source
+    strText = Now() & vbTab & _
+              ActiveWorkbook.Name & vbTab & _
+              Environ("COMPUTERNAME") & vbTab & _
+              Environ("USERNAME") & vbTab & _
+              strModule & vbTab & _
+              o_douVersion & vbTab & _
+              strMethod & vbTab & _
+              objError.Number & vbTab & _
+              Replace(objError.Description, vbNewLine, " | ") & vbTab & _
+              objError.Source
     
     strFile = ThisWorkbook.Path & "\Журнал ошибок.txt"
     
