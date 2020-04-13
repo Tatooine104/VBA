@@ -1,823 +1,1269 @@
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
-' Описание: Скрипты общего назначения
-' Компания: ООО "Лента"
-' Отдел:    Группа по ведению базы данных
-' Автор:    Шевченко Дмитрий <dmitry.shevchenko@lenta.com>
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
-Private Const ModuleVersion As Double = 1.001 ' Номер версии модуля
-' Обновлен: 2020.03.24 16:07:16 dmitry.shevchenko: Обновление экрана - исправил отключение формул
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Data_Manipulate(ByRef DataTable As Variant, _
-                                     ByVal DataSheet As Object, _
-                                     ByVal ColsNames As Variant, _
-                                     ByVal CalcCols As Variant, _
-                                     ByVal ColsFormats As Variant, _
-                                     Optional ByVal PickUp As Boolean = True, _
-                                     Optional ByVal ColsCheck As Boolean = True)
-' Создано: 2020.02.27 13:06:31
-' Автор: dmitry.shevchenko
-' <summary> Подхвать данных с листа или вставка данных на лист </summary>
-' <param name="DataTable"> Массив данных куда будем вставлять данные с листа, или откуда будем вставлять данные на лист </param>
-' <param name="DataSheet"> Лист с которым будем взаимодействовать </param>
-' <param name="ColsNames"> Массив имен колонок которые будем брать с листа. Количество в должно совпадать с размером DataTable </param>
-' <param name="CalcCols"> Имена столбцов которые вставлять и/или расчтеных столбцов которые нужно проверить </param>
-' <param name="ColsFormats"> Массив форматов вставляемых столбцов. По количеству элементов должен быть идентичен ColsNames </param>
-' <param name="PickUp"> Метка совершаемого действия. True - подхват данных с листа. False - вставка данных на лист </param>
-' <param name="ColsCheck"> Метка проверки расчетных столбцов. Если столбец существует он очищается от данных </param>
-
-On Error GoTo sc_Global_Data_Manipulate_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-ReDim borders(1) As Long: borders = fn_Global_Get_Edges(DataSheet, ColsNames(0)) ' Определяем первую и последнии строки в таблице
-
-Dim checkcol As Boolean ' Логическое поле для метки проверять колонку перед работой с ней
-
-For ind& = LBound(DataTable) To UBound(DataTable) ' Перебор столбцов
-    
-    checkcol = False ' Ставим метку что колонку проверять не нужно
-    cformat$ = "-" ' Формат по умолчанию не меняем
-    inf& = fn_Global_Get_Id(CalcCols, ColsNames(ind - 1)) - 1 ' Получаем индекс имени колонки в списке расчетных колонок
-    If inf > -1 Then ' Сравниваем имя обрабатываемой колонки со списком расчетных колонок
-        If ColsCheck Then checkcol = True ' Если стоит метка о необходимости проверки колокнки то ставим метку проверки колонки
-        If Not PickUp Then cformat = ColsFormats(inf) ' Если это вставка данных, то указываем формат вставки данных
-    End If
-    If PickUp Then ' Проверяем какое действие нужно совершить
-        DataTable(ind) = fn_Global_Get_Data(DataSheet, borders(0), borders(1), ColsNames(ind - 1), checkcol) ' Отправляем данные с листа в массив
-    Else ' Если данные нужно вставить на лист
-        Call sc_Global_Set_Data(DataSheet, borders(0), ColsNames(ind - 1), DataTable(ind), cformat, checkcol) ' Вставляем данные на лист
-    End If
-
-Next ind
-
-If Not PickUp Then Call sc_Global_Delete_Fantom_Row(DataSheet, ColsNames(0)) ' Стираем последнюю пустую строку которая появляется после вставки данных на лист
-
-Erase borders
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Data_Manipulate_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Data_Manipulate", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
+' Ñîçäàíî:      2020.04.05 07:44:35
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Èìÿ:          Globals
+' Òèï:          Module
+' Îïèñàíèå:     Ìåòîäû îáùåãî íàçíà÷åíèÿ
+' Îáíîâëåíî:    2020.04.05 07:51:39 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Add_Symbols] - Äîáàâèòü â íà÷àëî ñòðîêè ñèìâîëû äî óêàçàííîé äëèíû
+' Îáíîâëåíî:    2020.04.05 09:26:39 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Column_Check] - Ïðîâåðêà êîëîíêè. Åñëè ñóùåñòâóåò - î÷èñòèòü, åñëè íå ñóùåñòâóåò - ñîçäàòü
+' Îáíîâëåíî:    2020.04.05 09:34:59 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_WorkSheet_Check] - Ïðîâåðêà ñóùåñòâóåò ëè ëèñò
+' Îáíîâëåíî:    2020.04.05 09:55:35 Øåâ÷åíêî    Èìÿ [fn_WorkSheet_Check] çàìåíåíî íà [fn_Sheet_Check]
+' Îáíîâëåíî:    2020.04.05 19:17:36 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Sheet_Clear] - Î÷èñòêà óêàçàííîãî ëèñòà
+' Îáíîâëåíî:    2020.04.05 19:26:50 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Compare_Date] - Ñðàâíåíèå äàò
+' Îáíîâëåíî:    2020.04.05 19:38:27 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Data_Get] - Äàííûå ñ ëèñòà îòïðàâèòü â ìàññèâ
+' Îáíîâëåíî:    2020.04.05 19:48:31 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Data_Manipulate] - Ïîäõâàò äàííûõ ñ ëèñòà â ìàññèâ èëè âñòàâêà äàííûõ íà ëèñò
+' Îáíîâëåíî:    2020.04.05 19:57:19 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Data_Set] - Âñòàâêà äàííûõ íà ëèñò
+' Îáíîâëåíî:    2020.04.05 20:18:00 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Delete_Fantom_Row] - Óäàëèòü ïóñòóþ ñòðîêó â òàáëèöå êîòîðàÿ íåèçáåæíî âîçíèêàåò ïðè âñòàâêå äàííûõ ÷åðåç [Data_Set]
+' Îáíîâëåíî:    2020.04.05 20:25:37 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Error_Logger] - Ëîãèðîâàíèå îøèáîê
+' Îáíîâëåíî:    2020.04.06 06:13:31 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_File_Delete] - Óäàëèòü óêàçàííûé ôàéë
+' Îáíîâëåíî:    2020.04.06 06:15:57 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_File_Done] - Ïåðåèìåíîâàòü îáðàáîòàííûé ôàéë
+' Îáíîâëåíî:    2020.04.06 06:21:31 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Files_Names_Collection] - Ñîçäàòü êîëëåêöèþ èìåí ôàéëîâ íàéäåííûõ â óêàçàííîé ïàïêå ïî ìàñêå
+' Îáíîâëåíî:    2020.04.06 06:25:19 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_File_Open_Read_Only] - Îòêðûòü ôàéë ïîä ÷òåíèåì
+' Îáíîâëåíî:    2020.04.06 06:28:52 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Filters_Off_All] - Ñíÿòü âñå ôèëüòðà
+' Îáíîâëåíî:    2020.04.06 06:46:39 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Filter_Set] - Óñòàíîâèòü ôèëüòð â àêòèâíîé êîëîíêå ïî ñïèñêó çíà÷åíèé
+' Îáíîâëåíî:    2020.04.06 06:50:31 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Get_Edges] - Îïðåäåëèòü ãðàíèöû òàáëèöû
+' Îáíîâëåíî:    2020.04.06 06:59:28 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Get_Files_Names] - Ïîëó÷èòü ñïèñîê ôàéëîâ
+' Îáíîâëåíî:    2020.04.06 07:20:53 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Get_Id] - Ïîëó÷èòü íîìåð ýëåìåíòà ìàññèâà ïî åãî çíà÷åíèþ
+' Îáíîâëåíî:    2020.04.06 07:33:12 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Option_Create_Sheet] - Ñîçäàòü ëèñò îïöèé
+' Îáíîâëåíî:    2020.04.06 07:39:14 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Option_Get] - Ïîëó÷èòü ñîõðàíåííîå çíà÷åíèå îïöèè
+' Îáíîâëåíî:    2020.04.06 07:46:36 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Option_Set] - Ñîõðàíèòü çíà÷åíèå îïöèè
+' Îáíîâëåíî:    2020.04.06 07:54:36 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Refresh_Data] - Îáíîâèòü ïîäêëþ÷åííóþ òàáëèöó ñ äàííûìè
+' Îáíîâëåíî:    2020.04.06 08:07:06 Øåâ÷åíêî    Äîáàâëåí ìåòîä [fn_Refresh_Table] - Îáíîâèòü ïîäêëþ÷åííóþ òàáëèöó
+' Îáíîâëåíî:    2020.04.06 08:28:48 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_Screen_Updating] - Âêëþ÷åíèå/Îòêëþ÷åíèå îáíîâëåíèÿ ýêðàíà
+' Îáíîâëåíî:    2020.04.06 08:31:38 Øåâ÷åíêî    Äîáàâëåí ìåòîä [sc_String_In_TXT] - Çàïèñàòü ñòðîêó â òåêñòîâûé ôàéë
+' Îáíîâëåíî:    2020.04.07 08:24:17 dmitry.shevchenko   Äîáàâëåí ìåòîä [fn_File_Exists] - Ïðîâåðèòü ñóùåñòâóåò ëè ôàéë
+' Îáíîâëåíî:    2020.04.07 09:36:30 dmitry.shevchenko   Äîáàâèë ññûëêó íà êîíêðåòíûé ìîäóëü
+' Îáíîâëåíî:    2020.04.07 15:25:32 dmitry.shevchenko   Â [fn_Add_Symbols] äîáàâèë íåîáÿçàòåëüíûé ïàðàìåòð 'o_booWhere' - ìàðêåð îòãî ãäå äîáàâëÿåì ñèìâîëû
+' Îáíîâëåíî:    2020.04.07 17:15:39 dmitry.shevchenko   Äîáàâëåí ìåòîä [sc_Clipboard_Send] - Îòïðàâèòü äàííûå â áóôåð îáìåíà
+' Îáíîâëåíî:    2020.04.12 08:32:08 dmitry.shevchenko   Â [sc_Error_Logger] äîáàâëåíî î÷èñòêà îøèáêè
+' Îáíîâëåíî:    2020.04.12 10:41:39 dmitry.shevchenko   Äîáàâëåí ìåòîä [fn_Unique_Values] - Âûáðàòü èç óêàçàíîãî äèàïàçîíà óíèêàëüíûå çíà÷åíèÿ
+' Îáíîâëåíî:    2020.04.12 10:41:39 dmitry.shevchenko   Äîáàâëåí ìåòîä [fn_Week_Day_Name] - Ïîëó÷èòü èìÿ äíÿ íåäåëè íà ðóññêîì ïî íîìåðó
+' Îáíîâëåíî:    2020.04.12 10:50:19 dmitry.shevchenko   Äîáàâëåí ìåòîä [fn_Month_Name] - Ïîëó÷èòü Ðóññêîå íàçâàíèå ìåñÿöà ïî åãî íîìåðó
+' Îáíîâëåíî:    2020.04.12 17:16:28 dmitry.shevchenko   Äîáàâëåí ìåòîä [sc_Create_Folder] - Ñîçäàòü ïàïêó
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_String_To_Txt(ByVal text As String, _
-                                   ByVal filename As String)
-' Создано: 2020.02.27 12:05:58
-' Автор: dmitry.shevchenko
-' <summary> Сохранить строку в TXT файле </summary>
-' <param name="text"> Строка которую будем сохранять </param>
-' <param name="filename"> Полный путь к файлу в котором будем сохранять. Если файл не существует, то он будет создан </param>
+Option Explicit
+Private Const MODULEVERSION As Double = 1.037 ' Íîìåð âåðñèè ìîäóëÿ
 
-On Error GoTo sc_Global_String_To_Txt_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-Set FSO = CreateObject("scripting.filesystemobject")
-check = Len(Dir(filename)) > 0
-Set textfile = FSO.OpenTextFile(filename, 8, True)
-textfile.Write vbNewLine & text
-textfile.Close
-Set textfile = Nothing
-Set FSO = Nothing
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_String_To_Txt_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_String_To_Txt", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Error_Log(ByVal errn As Object, _
-                               ByVal modulename As String, _
-                               ByVal procname As String, _
-                               Optional ByVal MVersion As Long = 0)
-' Создано: 2020.02.27 11:55:37
-' Автор: dmitry.shevchenko
-' <summary> Логирование ошибок </summary>
-' <param name="errn"> Перехваченная ошибка </param>
-' <param name="modulename"> Название моделя где была перехвачена ошибка </param>
-' <param name="procname"> Имя объекта в котором перехвачена ошибка </param>
-' <param name="MVersion"> Версия текущего модуля </param>
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-temp1$ = Now() & vbTab & ActiveWorkbook.Name & vbTab & Environ("COMPUTERNAME") & vbTab & Environ("USERNAME") & vbTab & modulename & vbTab & MVersion & vbTab & procname & vbTab & errn.Number & vbTab & Replace(Err.Description, vbNewLine, " | ")
-
-'temp2$ = ThisWorkbook.Path & "\Журнал ошибок " & Year(Now()) & "." & fn_Global_Add_Symbols(Month(Now), 2) & "." & fn_Global_Add_Symbols(Day(Now), 2) & ".txt"
-temp2$ = ThisWorkbook.Path & "\Журнал ошибок.txt"
-
-sc_Global_String_To_Txt text:=temp1, filename:=temp2
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-End Sub
+' Ñîçäàíî:      2020.04.05 07:51:29
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Add_Symbols
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Äîáàâèòü â íà÷àëî ñòðîêè ñèìâîëû äî óêàçàííîé äëèíû
+' Ïàðàìåòð:     strValue {String} - Çíà÷åíèå ê êîòîðîìó áóäåì äîáàâëÿòü ñèìâîëû
+' Ïàðàìåòð:     bytLength {Byte} - Êîíå÷íàÿ äëèíà ñòðîêè. Íå áîëåå 255
+' Ïàðàìåòð:     o_strSymbol {String} - Äîáàâëÿåìûé ñèìâîë
+' Ïàðàìåòð:     o_booWhere {Boolean} - Ãäå äîáàâëÿåì? True - â íà÷àëå, False - â êîíöå
+' Âåðí¸ò:       String - Ñòðîêà ñ äîáàâëåííûìè â íà÷àëî ñèìâîëàìè
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Screen_Updating(ByVal Act As Boolean)
-' Создано: 2020.02.27 11:45:08
-' Автор: dmitry.shevchenko
-' <summary> Управление обновлением экрана </summary>
-' <param name="Act"> Метка совершаемого действия </param>
+Public Function fn_Add_Symbols(ByVal strValue As String, _
+                               ByVal bytLength As Byte, _
+                               Optional ByVal o_strSymbol As String = "0", _
+                               Optional ByVal o_booWhere As Boolean = True) As String
 
-On Error GoTo sc_Global_Screen_Updating_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+On Error GoTo fn_Add_Symbols_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim strResult As String ' Ðåçóëüòàò ðàáîòû ôóíêöèè
+Dim lonInd As Long      ' Ñ÷åò÷èê öèêëà
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-Application.ScreenUpdating = Act
-Application.ShowWindowsInTaskbar = Act
-Application.AskToUpdateLinks = Act
-Application.DisplayAlerts = Act
-Application.EnableEvents = Act
-Application.DisplayStatusBar = Act
-If Act Then
-    Application.EnableCancelKey = xlInterrupt
-    Application.Calculation = xlCalculationAutomatic
-    Application.DisplayCommentIndicator = xlCommentAndIndicator
-Else
-    Application.EnableCancelKey = xlDisabled
-    Application.Calculation = xlCalculationManual
-    Application.DisplayCommentIndicator = xlNoIndicator
-End If
+    strResult = strValue ' Ïðèñâîèòü çíà÷åíèå
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Screen_Updating_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Screen_Updating", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Delete_Fantom_Row(ByVal tSheet As Object, _
-                                       ByVal ColHead As String)
-' Создано: 2020.02.27 11:41:00
-' Автор: dmitry.shevchenko
-' <summary> Удалить первую пустую строку после таблицы. При вставке данных на лист появляется лишняя пустая строка </summary>
-' <param name="tSheet"> Лист на котором будем удалять фантомную строку </param>
-' <param name="ColHead"> Название колонки по которой будем определять границы таблицы. Колонка не должна сожержать пустых значений </param>
-
-On Error GoTo sc_Global_Delete_Fantom_Row_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-For i& = 1 To 1048576 ' Перебор строк на листе
-
-    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then Exit For ' При нахождении в строке исклмого заняения выходим из цикла
-    
-Next i
-
-sCol& = tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole).Column ' Находим номер колонки с искомым значением
-lRow& = tSheet.Range(tSheet.Cells(i, sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Находим в этой колонке пустую строку
-Rows(lRow & ":" & lRow).Delete Shift:=xlUp ' удаляем строку
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Delete_Fantom_Row_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_Fantom_Row", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Check_Column(ByVal aSheet As Object, _
-                                  ByVal bText As String, _
-                                  ByVal cRow As Long)
-' Создано: 2020.02.27 11:35:40
-' Автор: dmitry.shevchenko
-' <summary> Проверяет существует ли в таблице такая колонка, если да, то очищает ее от значений </summary>
-' <param name="aSheet"> Лист на кототором находится таблица </param>
-' <param name="bText"> Название проверяемой колонки </param>
-' <param name="cRow"> Номер строки на которой расположена "шапка" таблицы </param>
-
-On Error GoTo sc_Global_Check_Column_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-If Not aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole) Is Nothing Then ' ищем в указанной строке нужное значение
-    
-    aSheet.Range(cRow & ":" & cRow).Find(bText, , , xlWhole).EntireColumn.ClearContents ' Если нашли колонку, то стираем все данные из нее
-    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("", , , xlWhole).Column).Value = bText ' Заново вписываем на лист имя колонки
+    If Len(strValue) < bytLength Then ' Ïðîâåðêà êîëè÷åñòâî ñèìâîëîâ
         
-Else ' Если колонка не существует
-    
-    aSheet.Cells(cRow, aSheet.Range(cRow & ":" & cRow).Find("").Column).Value = bText ' Ищем в указанной строке пустую ячейку и вписываем им колонки
-    
-End If
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Check_Column_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Check_Column", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Delete_File(ByVal filename As String)
-' Создано: 2020.02.27 11:31:56
-' Автор: dmitry.shevchenko
-' <summary> Удалить указанный файл </summary>
-' <param name="filename"> Полный путь к файлу </param>
-
-On Error GoTo sc_Global_Delete_File_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-Kill filename ' Удаляем файл
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Delete_File_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Delete_File", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_File_Done(ByVal filename As String)
-' Создано: 2020.02.27 11:29:44
-' Автор: dmitry.shevchenko
-' <summary> Переименовать обработанную выгрузку </summary>
-' <param name="filename"> Полныть путь к файлу </param>
-
-On Error GoTo sc_Global_File_Done_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-newname = Left(filename, Len(filename) - InStr(StrReverse(filename), "\")) & "\" & Environ("USERNAME") & " " & Right(filename, InStr(StrReverse(filename), "\") - 1) ' Новое имя файла
-Name filename As newname ' Переименовываем вставляя в начало имени файла - имя юзера обработавшего файл
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_File_Done_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_File_Done", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Set_Data(ByVal nSheet As Object, _
-                              ByVal fRow As Long, _
-                              ByVal ColName As String, _
-                              ByVal dTable As Variant, _
-                              ByVal nFormat As String, _
-                              Optional ByVal checkcol As Boolean = False)
-' Создано: 2020.02.27 11:26:13
-' Автор: dmitry.shevchenko
-' <summary> Вставить данные из массива на лист </summary>
-' <param name="nSheet"> Лист на который будем вставлять данные </param>
-' <param name="fRow"> Номер строки с "шапкой" таблицы </param>
-' <param name="ColName"> Имя вставляемого столбца </param>
-' <param name="dTable"> Массив данных </param>
-' <param name="nFormat"> Формат вставки </param>
-' <param name="checkcol"> Метка проверки и очистки столбца </param>
-
-On Error GoTo sc_Global_Set_Data_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Проверяем колонку если метка = True
-
-Dim cFor As Boolean: cFor = False
-
-Dim tCol As Long: tCol = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Ищем номер колонки куда будем вставлять данные
-
-Select Case nFormat ' Проверяем формат вставляемых данных
-        Case "Text" ' Текстовый формат
-                cformat = "@"
-                cFor = True
-        Case "All" ' Общий формат
-                cformat = "General"
-                cFor = True
-        Case "Number" ' Целые числа
-                cformat = "0"
-                cFor = True
-        Case "0.00" ' Числа до сотых
-                cformat = "0.00"
-                cFor = True
-        Case "Date" ' Дата
-                cformat = "m/d/yyyy"
-                cFor = True
-        Case "Money" ' Финансовый
-                cformat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
-                cFor = True
-End Select
-    
-If cFor Then nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)).NumberFormat = cformat ' диапазон куда будем вставлять преобразуем в нужный формат
-nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(fRow + UBound(dTable) - 1, tCol)) = dTable ' вставляем данные
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Set_Data_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Set_Data", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Clear_Sheet(ByVal tSheet As Object, _
-                                 ByVal mRow As Long)
-' Создано: 2020.02.27 11:19:35
-' Автор: dmitry.shevchenko
-' <summary> Очистка листа от данных </summary>
-' <param name="tSheet"> Лист на котором будем производить очистку </param>
-' <param name="mRow"> Номер строки с котрой начать очистку </param>
-
-On Error GoTo sc_Global_Clear_Sheet_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-lRow& = IIf(tSheet.UsedRange.Rows.Count > mRow, tSheet.UsedRange.Rows.Count, mRow + 1)
-
-tSheet.Rows(mRow & ":" & lRow).Delete Shift:=xlUp
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Clear_Sheet_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Clear_Sheet", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Off_All_Filters()
-' Создано: 2020.02.27 11:10:15
-' Автор: dmitry.shevchenko
-' <summary> Снять все фильтра </summary>
-
-On Error GoTo sc_Global_Off_All_Filters_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-If ActiveSheet.EnableAutoFilter Then ActiveSheet.ShowAllData
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Off_All_Filters_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Off_All_Filters", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Sub sc_Global_Return_Filters(ByRef temp() As String)
-' Создано: 2020.02.27 11:06:55
-' Автор: dmitry.shevchenko
-' <summary> Вернуть фильтр в исходное состояние </summary>
-' <param name="temp"> Массив с значениями фильтров </param>
-
-On Error GoTo sc_Global_Return_Filters_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-For i = LBound(temp) To UBound(temp)
-
-    If temp(i) <> "" Then
-        If InStr(temp(i), ",") > 0 Then
-            temp1 = Split(temp(i), ",")
-            ActiveSheet.UsedRange.AutoFilter Field:=i, Criteria1:=temp1, Operator:=xlFilterValues
-        Else
-            ActiveSheet.UsedRange.AutoFilter Field:=i, Criteria1:=temp(i)
-        End If
-    End If
-Next i
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Sub ' Завершение работы
-
-sc_Global_Return_Filters_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "sc_Global_Return_Filters", ModuleVersion) ' Вызов обработчика ошибок
-
-End Sub
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Add_Symbols(ByVal aValue As String, _
-                                      ByVal bLength As Integer, _
-                                      Optional ByVal sumb As String = "0") As String
-' Создано: 2020.02.26 18:06:21
-' Автор: dmitry.shevchenko
-' <summary> Добавить к указанному значению в начало символы </summary>
-' <param name="aValue"> Значение к которому нужно добавить символы </param>
-' <param name="bLength"> Конечная длина строки которая должна получиться </param>
-' <param name="sumb"> Символ который будем добавлять в начало. По умолчанию ноль </param>
-' <returns> Значение с добавленными символами </return>
-
-On Error GoTo fn_Global_Add_Symbols_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-fn_Global_Add_Symbols = aValue ' Присвоить значение
-
-If Len(aValue) < bLength Then ' Проверка количество символов
-
-    For i = 1 To bLength - Len(aValue) ' Инициализация циклa
-    
-        fn_Global_Add_Symbols = sumb & fn_Global_Add_Symbols ' Добавляем нули
-        
-    Next
-    
-End If
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
-
-fn_Global_Add_Symbols_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Add_Symbols", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_ExtractUniq(rng As Range) ' Из указанного диапазона извлечь уникальные значения
-
-On Error GoTo fn_Global_ExtractUniq_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-Dim arr(), i&, S$, x
-
-arr = Intersect(rng.Parent.UsedRange, rng).Value
-On Error Resume Next
-With New Collection
-  For Each x In arr()
-    S = Trim(x)
-    If Len(S) > 0 Then
-      If IsEmpty(.Item(S)) Then
-        For i = 1 To .Count
-          If S < .Item(i) Then Exit For
+        For lonInd = 1 To bytLength - Len(strValue) ' Èíèöèàëèçàöèÿ öèêëa
+            
+            If o_booWhere Then
+            
+                strResult = o_strSymbol & strResult  ' Äîáàâëÿåì íóëè â íà÷àëå
+                
+            Else
+            
+                strResult = strResult & o_strSymbol  ' Äîáàâëÿåì íóëè â êîíöå
+                
+            End If
+            
+            
         Next
-          If i > .Count Then .Add S, S Else .Add S, S, Before:=i
-      End If
-    End If
-  Next
-  ReDim arr(1 To .Count)
-  For i = 1 To .Count
-    arr(i) = .Item(i)
-  Next
-End With
-fn_Global_ExtractUniq = arr()
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы процедуры
-
-fn_Global_ExtractUniq_Error: ' Что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_ExtractUniq", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Refresh_Data(ByVal DataSheet As Object, _
-                                       ByVal DataTable As String, _
-                                       ByVal OptionName As String, _
-                                       Optional ByVal ControlTime As String = "09:00:00") As Boolean
-' Создано: 2020.02.27 11:00:47
-' Автор: dmitry.shevchenko
-' <summary> Обновить таблицу подключенных данных </summary>
-' <param name="DataSheet"> Лист на котором расположена таблица </param>
-' <param name="DataTable"> Таблица которую нужно обновить </param>
-' <param name="OptionName"> Имя опции с меткой последнего обновления </param>
-' <param name="ControlTime"> Контрольное время обновления </param>
-' <returns> True - данные обновлены, False - не обновлены </return>
-
-On Error GoTo fn_Global_Refresh_Data_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-refreshmark$ = fn_Global_Get_Option(OptionName)
-Dim refreshcheck As Boolean
-Dim resreshtime As Boolean
-
-If CDate(refreshmark) < Date Or (CDate(Now - Date) > CDate(ControlTime) And CDate(refreshmark) < CDate(ControlTime)) Then
-
-    DataSheet.Visible = xlSheetVisible ' Делаем видимым лист
-    DataSheet.Activate ' Переходим на лист
-    refreshcheck = fn_Global_Refresh_Table(Range(DataTable).ListObject.QueryTable) ' Обновляем таблицу с данными
-    If refreshcheck Then ' Проверяем что действительно обновилось
-        refreshtime = fn_Global_Set_Option(OptionName, Now()) ' Если удалось обновиться то сохраняем данные
+        
     End If
 
-End If
+    fn_Add_Symbols = strResult
 
-fn_Global_Refresh_Data = True ' Присваеваем возвращаемое значение
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-DataSheet.Visible = xlSheetHidden ' Скрываем лист с реестром
+fn_Add_Symbols_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
-
-fn_Global_Refresh_Data_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Data", ModuleVersion) ' Вызов обработчика ошибок
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Add_Symbols", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
 End Function
+
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 19:26:37
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Compare_Date
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ñðàâíåíèå äàò
+' Ïàðàìåòð:     r_varDates() {Variant} - Ìàññèâ èç 3 ýëåìåíòîâ: Äàòà êîòîðóþ ïðîâåðèòü, íàèìåíüøàÿ äàòà, íàèáîëüøàÿ äàòà
+' Âåðí¸ò:       Variant - Ìàññèâ èç 2 ýëåìåíòîâ - TRUE/FALSE è êîììåíòàðèé
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Compare_Date(ByRef r_varDates() As Variant) As Variant
 
-Public Function fn_Global_Refresh_Table(ByVal qTable As Object) As Boolean
-' Создано: 2020.02.27 10:42:31
-' Автор: dmitry.shevchenko
-' <summary> Обновить таблицу подключения </summary>
-' <param name="qTable"> Таблица подключения </param>
-' <returns> True - если удалось обновить, False - если не удалось </return>
+On Error GoTo fn_Compare_Date_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-fn_Global_Refresh_Table = False ' Дефолтное значение
-Dim try As Integer: try = 0 ' Счетчик обновлений
+    Dim varResult As Variant: varResult = Array(False, "Ïî óìîë÷àíèþ")
 
-On Error GoTo fn_Global_Refresh_Table_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+    If CDate(r_varDates(0)) < CDate(r_varDates(1)) Then
+    
+        varResult = Array(False, "Ðàíî")
+        
+    ElseIf CDate(r_varDates(0)) > CDate(r_varDates(2)) Then
+        
+        varResult = Array(False, "Ïîçäíî")
+        
+    Else
+        
+        varResult = Array(True, "Îê")
+        
+    End If
+
+    fn_Compare_Date = varResult
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Compare_Date_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Compare_Date", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 19:38:14
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Data_Get
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Äàííûå ñ ëèñòà îòïðàâèòü â ìàññèâ
+' Ïàðàìåòð:     wshSheet (Worksheet) - Ëèñò ñ êîòîðîãî áóäåì áðàòü äàííûå
+' Ïàðàìåòð:     lonStart (Long) - Ïåðâàÿ ñòðîêà òàáëèöû
+' Ïàðàìåòð:     lonEnd (Long) - Ïîñëåäíÿÿ ñòðîêà òàáëèöû
+' Ïàðàìåòð:     strName (String) - Èìÿ êîëîíêè èç êîòîðîé áóäåì áðàòü äàííûå. Äîëæíî ðàñïîëàãàòüñÿ íà 1 ñòðîêå òàáëèöû
+' Ïàðàìåòð:     o_booCheck (Boolean) - Ìåòêà ïðîâåðêè êîëîíêè. True - î÷èñòêà êîëîíêè åñëè îíà åñòü, è ñîçäàíèå åñëè åå íåò. False - íå ïðîâåðÿåòñÿ
+' Âåðí¸ò:       Variant - Ìàññèâ äàííûõ ñ ëèñòà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Data_Get(ByVal wshSheet As Worksheet, _
+                            ByVal lonStart As Long, _
+                            ByVal lonEnd As Long, _
+                            ByVal strName As String, _
+                            Optional ByVal o_booCheck As Boolean = False) As Variant
+
+On Error GoTo fn_Data_Get_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    If o_booCheck Then Call Globals.sc_Column_Check(wshSheet, strName, lonStart)  ' Åñëè óñòàíîâëåí èíäèêàòîð ïðîâåðêè, òî ïðîâåðÿåì êîëîíêó
+
+    Dim lonColumn As Long: lonColumn = wshSheet.Range(lonStart & ":" & lonStart).Find(strName, , , xlWhole).Column ' Èùåì íîìåð íóæíîé êîëîêíêè ïî èìåíè
+    fn_Data_Get = wshSheet.Range(wshSheet.Cells(lonStart, lonColumn), wshSheet.Cells(lonEnd, lonColumn)) ' Ïðåâðàùàåò äàííûå ñ ëèñòà â ìàññèâ
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Data_Get_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Data_Get", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:21:18
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Files_Names_Collection
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ñîçäàòü êîëëåêöèþ èìåí ôàéëîâ íàéäåííûõ â óêàçàííîé ïàïêå ïî ìàñêå
+' Ïàðàìåòð:     strFolder {String} - Ïàïêà â êîòîðîé ïðîèçâîäèòü ïîèñê
+' Ïàðàìåòð:     strMask {String} - Ìàñêà ïîèñêà
+' Ïàðàìåòð:     lonDeep {Long} - Ãëóáèíà ïîèñêà â ïîäïàïêàõ. Ìàêñèìàëüíî 999
+' Âåðí¸ò:       Collection - Êîëëåêöèþ èìåí ôàéëîâ
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Files_Names_Collection(ByVal strFolder As String, _
+                                          ByVal strMask As String, _
+                                          ByVal lonDeep As Long) As Collection
+
+On Error Resume Next ' Èãíîðèðîâàíèå îøèáêè
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Set fn_Files_Names_Collection = New Collection ' Ñîçäàåì êîëëåêöèþ äëÿ èìåí ôàéëîâ
+    Dim objFSO As Object: Set objFSO = CreateObject("Scripting.FileSystemObject") ' Ñîçäàåì îáúåêò âçàèìîäåéñòâèÿ ñ ôàéëîâîé ñèñòåìîé
+    Globals.sc_Get_Files_Names strFolder, strMask, objFSO, fn_Files_Names_Collection, lonDeep ' Ïðîèçâîäèì ïîèñê ôàéëîâ â óêàçàííîé ïàïêå, ïî óêàçàííîé ìàñêå ïîèñêà
+    Set objFSO = Nothing ': Application.StatusBar = False ' îáíóëÿåì îáúåêò äëÿ î÷èñòêè ïàìÿòè
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:25:08
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_File_Open_Read_Only
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Îòêðûòü ôàéë ïîä ÷òåíèåì
+' Ïàðàìåòð:     strFile {String} - Ïîëíîå óèìÿ ôàéëà
+' Âåðí¸ò:       Boolean - Ðåçóëüòàò ïðîâåðêè îòêðûëñÿ ôàéë èëè íåò
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_File_Open_Read_Only(ByVal strFile As String) As Boolean
+
+On Error GoTo fn_File_Open_Read_Only_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_File_Open_Read_Only = False
+
+    Workbooks.Open filename:=strFile, Format:=6, Delimiter:=";", Local:=True, ReadOnly:=True ' Îòêðûâàåì ôàéë ïîä ÷òåíèåì
+
+    fn_File_Open_Read_Only = True
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_File_Open_Read_Only_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_File_Open_Read_Only", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:50:25
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Get_Edges
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Îïðåäåëèòü ãðàíèöû òàáëèöû
+' Ïàðàìåòð:     wshSheet {Worksheet} - Ëèñò ñ êîòîðûì áóäåì âçàèìîäåéñòâîâàòü
+' Ïàðàìåòð:     strName {String} - Èìÿ êîëîíêè ïî êîòîðîé áóäåì îïðåäåëÿòü ãðàíèöó. Íå äîëæíà ñîäåðæàòü ïóñòûõ ñòðîê
+' Âåðí¸ò:       Long() - Ìàññèâ èç 2 ýëåìåíòîâ - âåðõíÿÿ ãðàíèöà è íèæíÿÿ
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Get_Edges(ByVal wshSheet As Worksheet, _
+                             ByVal strName As String) As Long()
+
+On Error GoTo fn_Get_Edges_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim lonResult(1) As Long, lonI As Long, lCol As Long
+    
+    For lonI& = 1 To 1048576 ' Ïåðåáîð ñòðîê íà óêàçàííîì ëèñòå
+
+        If Not wshSheet.Range(lonI & ":" & lonI).Find(strName, , , xlWhole) Is Nothing Then lonResult(0) = lonI: Exit For ' Èùåì â ñòðîêå íàçâàíèå êîëîíêè, ïðè íàõîæäåíèè çàïîìèíàåì íîìåð ñòðîêè è ïðåðûâàåì öèêë
+    
+    Next lonI
+    
+    lCol = wshSheet.Range(lonResult(0) & ":" & lonResult(0)).Find(strName, , , xlWhole).Column ' Èùåì íîìåð êîëîíêè
+    lonResult(1) = wshSheet.Range(wshSheet.Cells(lonResult(0), lCol), wshSheet.Cells(1048576, lCol)).Find("").Row ' Èùåì ïóñòóþ ñòðîêó â ýòîé êîëîíêå
+
+    fn_Get_Edges = lonResult
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Get_Edges_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Get_Edges", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 07:20:26
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Get_Id
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïîëó÷èòü íîìåð ýëåìåíòà ìàññèâà ïî åãî çíà÷åíèþ
+' Ïàðàìåòð:     varArray {Variant} - Ìàññèâ ýëåìåíòîâ
+' Ïàðàìåòð:     strValue {String} - Èñêîìîå çíà÷åíèå
+' Âåðí¸ò:       Long - Íîìåð ýëåìåíòà ìàññèâà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Get_Id(ByVal varArray As Variant, _
+                          ByVal strValue As String) As Long
+
+On Error GoTo fn_Get_Id_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_Get_Id = 0
+    
+    Dim lonI As Long
+    
+    For lonI = LBound(varArray) To UBound(varArray) ' öèêë ïåðåáîðà ýëåìåíòîâ ìàññèâà
+
+        If varArray(lonI) = strValue Then ' Ñðàâíåíèå ýëåíòà ñ èñêîìûì çíà÷åíèåì. Ïðè ñîâïàäåíèè âûõîä èç öèêëà. Èíäåêñ ýëåìåíòà óâåëè÷èâàåì íà 1 ò.ê. ìàññèâ íà÷èíàåòñÿ ñ 0
+        
+            fn_Get_Id = lonI + 1
+            Exit Function
+            
+        End If
+        
+    Next lonI
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Get_Id_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Get_Id", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 07:38:52
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Option_Get
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïîëó÷èòü ñîõðàíåííîå çíà÷åíèå îïöèè
+' Ïàðàìåòð:     strOption {String} - Íàçâàíèå îïöèè
+' Âåðí¸ò:       String - Çíà÷åíèå îïöèè
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Option_Get(ByVal strOption As String) As String
+
+On Error GoTo fn_Option_Get_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_Option_Get = "Îïöèÿ íå ïîëó÷åíà!" ' Çíà÷åíèå ïî óìîë÷àíèþ
+
+    fn_Option_Get = Worksheets("Îïöèè").Cells(Worksheets("Îïöèè").Range("A:A").Find(strOption, , , xlWhole).Row, 2).Value ' Ïîèñê çíà÷åíèÿ
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Option_Get_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Option_Get", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 07:46:13
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Option_Set
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ñîõðàíèòü çíà÷åíèå îïöèè
+' Ïàðàìåòð:     strOption {String} - Èìÿ îïöèè
+' Ïàðàìåòð:     strValue {String} - Çíà÷åíèå îïöèè
+' Âåðí¸ò:       Boolean - True/False âçàâèñèìîñòè îò òîãî óäàëîñü ñîõðàíèòü èëè íåò
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Option_Set(ByVal strOption As String, _
+                              ByVal strValue As String) As Boolean
+
+On Error GoTo fn_Option_Set_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_Option_Set = False ' Çíà÷åíèå ïî óìîë÷àíèþ
+    
+    Dim booCheck As Boolean, lonRow As Long
+    
+    booCheck = fn_Sheet_Check("Îïöèè") ' Ïðîâåðÿåì ÷òî ëèñò ñ îïöèè ñóùåñòâóåò
+    
+    If Not booCheck Then sc_Option_Create_Sheet ' Åñëè ëèñò îïöèé íå ñóùåñòâóåò òî ñîçäàåì åãî
+
+    If Not Worksheets("Îïöèè").Range("A:A").Find(strOption, , , xlWhole) Is Nothing Then ' Ïîèñê òàêîé îïöèè
+    
+        Worksheets("Îïöèè").Cells(Worksheets("Îïöèè").Range("A:A").Find(strOption, , , xlWhole).Row, 2).Value = strValue ' Åñëè îïöèÿ íàéäåíà, òî ïðèñâàåâàåì íîâîå çíà÷íèå
+        
+    Else
+    
+        lonRow = Worksheets("Îïöèè").Range("A:A").Find("", , , xlWhole).Row ' Åñëè îïöèÿ íå íàéäåíà, èùåì ïóñòóþ ñòðîêó
+        Worksheets("Îïöèè").Cells(lonRow, 1).Value = strOption ' Âïèñûâàåì íàçâàíèå îïöèè
+        Worksheets("Îïöèè").Cells(lonRow, 2).Value = strValue ' Âïèñûâàåì çíà÷åíèå îïöèè
+        
+    End If
+
+    fn_Option_Set = True ' Âîçâðàùàåì ïîëîæèòåëüíîå çíà÷åíèå
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Option_Set_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Option_Set", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 07:54:22
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Refresh_Data
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Îáíîâèòü ïîäêëþ÷åííóþ òàáëèöó ñ äàííûìè
+' Ïàðàìåòð:     wshSheet {Worksheet} - Ëèñò íà êîòîðîì îáíîâëÿåìàÿ òàáëèöà
+' Ïàðàìåòð:     strTable {String} - Îáíîâëÿåìàÿ òàáëèöà
+' Ïàðàìåòð:     strOption {String} - Íàçâàíèå îïöèè êîòîðàÿ õðàíèò âðåìÿ ïîñëåäíåãî îáíîâëåíèÿ
+' Ïàðàìåòð:     o_strTime {String} - Êîíòðîëüíîå âðåìÿ îáíîâëåíèÿ; Ïî óìîë÷àíèþ: "09:00:00"
+' Âåðí¸ò:       Boolean - True/False â çàâèñèìîñòè îò òîãî óäàëîñü ëè îáíîâèòü èëè íåò
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Refresh_Data(ByVal wshSheet As Worksheet, _
+                                ByVal strTable As String, _
+                                ByVal strOption As String, _
+                                Optional ByVal o_strTime As String = "09:00:00") As Boolean
+
+On Error GoTo fn_Refresh_Data_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_Refresh_Data = False ' Çíà÷åíèå ïî óìîë÷àíèþ
+
+    Dim strMark As String, booCheck As Boolean, booTime As Boolean
+    
+    strMark = fn_Option_Get(strOption) ' Ïîëó÷àåì îïöèþ - âðåìÿ ïîñëåäíåãî îáíîâëåíèÿ
+    
+    If CDate(strMark) < Date Or (CDate(Now - Date) > CDate(o_strTime) And CDate(strMark) < CDate(o_strTime)) Then ' Ñðàâíèâàåì êîíòðîëüíîå âðåìÿ ñî âðåìåíåì ïîñëåäíåíãî îáíîâëåíèÿ
+    
+        wshSheet.Visible = xlSheetVisible ' Äåëàåì ëèñò ñ êîòîðûì áóäåì âçàèìîäåéñòâîâàòü âèäèìûì
+        wshSheet.Activate ' Ïåðåõîäèì íà ýòîò ëèñò
+        booCheck = Globals.fn_Refresh_Table(Range(strTable).ListObject.QueryTable) ' Îáíîâëÿåì òàáëèöó
+        
+        If booCheck Then ' Ïðîâåðÿåì ÷òî òàáëèöà äåéñòâèòåëüíî îáíîâèëàñü
+        
+            booTime = fn_Option_Set(strOption, Now()) ' Ñîõðàíÿåì âðåìÿ ïîñëåäíåãî îáíîâëåíèÿ
+            
+        End If
+    
+    End If
+    
+    wshSheet.Visible = xlSheetHidden ' Ñêðûâàåì ëèñò
+
+    fn_Refresh_Data = True ' Âîçâðàùàåì ïîëîæèòåëüíîå çíà÷åíèå
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Refresh_Data_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Refresh_Data", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 08:07:02
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Refresh_Table
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Îáíîâèòü ïîäêëþ÷åííóþ òàáëèöó
+' Ïàðàìåòð:     objTable {Object} - Òàáëèöà êîòîðóþ íóæíî îáíîâèòü
+' Âåðí¸ò:       Boolean - True/False - â çàâèñèìîñòè îò òîãî óäàëîñü ëè îáíîâèòü òàáëèöó èëè íåò
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Refresh_Table(ByVal objTable As Object) As Boolean
+
+On Error GoTo fn_Refresh_Table_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim bytTry As Byte: bytTry = 0 ' Ïîëå äëÿ õðàíåíèÿ ñ÷åòà êîëè÷åñòâà ïîïûòîê îáíîâëåíèÿ
+
+    fn_Refresh_Table = False
 
 mainaction:
 
-qTable.Refresh BackgroundQuery:=False ' Обновляем даты заказов
-fn_Global_Refresh_Table = True ' Устанавливаем положительное возвращаемое значение
+    objTable.Refresh BackgroundQuery:=False ' Îáíîâëÿåì òàáëèöó
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы процедуры
+    fn_Refresh_Table = True
 
-fn_Global_Refresh_Table_Error: ' Что делать при ошибке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Refresh_Table", ModuleVersion) ' Вызов обработчика ошибок
+fn_Refresh_Table_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-Application.Wait Time:=Now + TimeSerial(0, 1, 0) ' Ожидаем одну минуту
-try = try + 1 ' Увеличиваем счетчик попыток
-If try < 5 Then GoTo mainaction ' Если совершено менее 5 попыток то пробуем еще раз
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Refresh_Table", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+Application.Wait Time:=Now + TimeSerial(0, 1, 0) ' Îæèäàåì îäíó ìèíóòó
+bytTry = bytTry + 1 ' Óâåëè÷èâàåì ñ÷åò÷èê ïîïûòîê
+If bytTry < 5 Then GoTo mainaction ' Åñëè ñîâåðøåíî ìåíåå 5 ïîïûòîê òî ïðîáóåì åùå ðàç
 
 End Function
+
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Get_Edges(ByVal tSheet As Object, _
-                                    ByVal ColHead As String) As Variant
-' Создано: 2020.02.27 10:42:31
-' Автор: dmitry.shevchenko
-' <summary> Определить границы таблицы </summary>
-' <param name="tSheet"> Лист на котором расположена таблица </param>
-' <param name="ColHead"> Имя колонки по которой будем определять границы таблицы. Не должна сожержать пустых значений </param>
-' <returns> Массив из 2 элементов: верхней границы с "шапкой" таблицы и первой пустой строки после таблицы </return>
+' Ñîçäàíî:      2020.04.05 09:34:51
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Sheet_Check
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïðîâåðêà ñóùåñòâóåò ëè ëèñò
+' Ïàðàìåòð:     strName {String} - Èìÿ ëèñòà êîòîðûé íóæíî ïðîâåðèòü
+' Âåðí¸ò:       Boolean - Ðåçóëüòàò ïðîâåðêè ñóùåñòâóåò ëè ëèñò èëè íåò
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Sheet_Check(ByVal strName As String) As Boolean
 
-On Error GoTo fn_Global_Get_Edges_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+On Error GoTo fn_Sheet_Check_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-Dim borders(1) As Long ' Массив для запоминания границ таблицы
+    fn_Sheet_Check = False
 
-For i& = 1 To 1048576 ' Перебор строк на указанном листе
+    Dim objSheet As Worksheet: Set objSheet = Worksheets(strName)
 
-    If Not tSheet.Range(i & ":" & i).Find(ColHead, , , xlWhole) Is Nothing Then borders(0) = i: Exit For ' Ищем в строке название колонки, при нахождении запоминаем номер строки и прерываем цикл
+    fn_Sheet_Check = True
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Sheet_Check_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_Sheet_Check", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 09:26:26
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Column_Check
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïðîâåðêà êîëîíêè. Åñëè ñóùåñòâóåò - î÷èñòèòü, åñëè íå ñóùåñòâóåò - ñîçäàòü
+' Ïàðàìåòð:     objSheet {Object} - Ëèñò íà êîòðîì íóæíî ïðîâåðèòü êîëîíêó
+' Ïàðàìåòð:     strName {String} - Èìÿ ïðîâåðÿåìîé êîëîíêè
+' Ïàðàìåòð:     lonRow {Long} - Íîìåð ñòðîêè ãäå íàõîäèòñÿ øàïêà òàáëèöû
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Column_Check(ByVal objSheet As Object, _
+                           ByVal strName As String, _
+                           ByVal lonRow As Long)
+
+On Error GoTo sc_Column_Check_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+        If Not objSheet.Range(lonRow & ":" & lonRow).Find(strName, , , xlWhole) Is Nothing Then ' èùåì â óêàçàííîé ñòðîêå íóæíîå çíà÷åíèå
+        
+            objSheet.Range(lonRow & ":" & lonRow).Find(strName, , , xlWhole).EntireColumn.ClearContents ' Åñëè íàøëè êîëîíêó, òî ñòèðàåì âñå äàííûå èç íåå
+            objSheet.Cells(lonRow, objSheet.Range(lonRow & ":" & lonRow).Find("", , , xlWhole).Column).Value = strName ' Çàíîâî âïèñûâàåì íà ëèñò èìÿ êîëîíêè
+            
+        Else ' Åñëè êîëîíêà íå ñóùåñòâóåò
+        
+            objSheet.Cells(lonRow, objSheet.Range(lonRow & ":" & lonRow).Find("").Column).Value = strName ' Èùåì â óêàçàííîé ñòðîêå ïóñòóþ ÿ÷åéêó è âïèñûâàåì èìÿ êîëîíêè
+        
+        End If
+        
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Column_Check_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Column_Check", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 19:48:26
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Data_Manipulate
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïîäõâàò äàííûõ ñ ëèñòà â ìàññèâ èëè âñòàâêà äàííûõ íà ëèñò
+' Ïàðàìåòð:     r_varTable (Variant) - Ìàññèâ äàííûõ
+' Ïàðàìåòð:     wshSheet (Worksheet) - Ëèñò ñ êîòîðûì áóäåì âçàèìîäåéñòâîâàòü
+' Ïàðàìåòð:     varNames (Variant) - Ìàññèâ èìåí ñòîëáöîâ ñ êîòîðûìè áóäåì âçàèìîäåéñòâîâàòü
+' Ïàðàìåòð:     varPaste (Variant) - Èìåíà ñòîëáöîâ äëÿ âñòàâêè
+' Ïàðàìåòð:     varFormat (Variant) - Ôîðìàòû êîëîíîê ïðè âñòàâêå
+' Ïàðàìåòð:     o_booPickup (Boolean) - True - ñ ëèñòà â ìàññèâ. False - èç ìàññèâà íà ëèñò; Ïî óìîë÷àíèþ - True
+' Ïàðàìåòð:     o_booCheck (Boolean) - Ìåòêà ïðîâåðêè êîëîíêè. True - ïîðîâåðÿåì. False - íåò; Ïî óìîë÷àíèþ - False
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Data_Manipulate(ByRef r_varTable As Variant, _
+                              ByVal wshSheet As Worksheet, _
+                              ByVal varNames As Variant, _
+                              ByVal varPaste As Variant, _
+                              ByVal varFormat As Variant, _
+                              Optional ByVal o_booPickup As Boolean = "True", _
+                              Optional ByVal o_booCheck As Boolean = "False")
+
+On Error GoTo sc_Data_Manipulate_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    ReDim lonBorders(1) As Long: lonBorders = Globals.fn_Get_Edges(wshSheet, varNames(0)) ' Îïðåäåëÿåì ïåðâóþ è ïîñëåäíèè ñòðîêè â òàáëèöå
+
+    Dim o_booCheckColumn As Boolean, lonI As Long
     
-Next i
+    For lonI = LBound(r_varTable) To UBound(r_varTable) ' Ïåðåáîð ñòîëáöîâ
+        
+        o_booCheckColumn = False ' Ñòàâèì ìåòêó ÷òî êîëîíêó ïðîâåðÿòü íå íóæíî
+        Dim sFormat As String: sFormat = "-" ' Ôîðìàò ïî óìîë÷àíèþ íå ìåíÿåì
+        Dim lId As Long: lId = Globals.fn_Get_Id(varPaste, varNames(lonI - 1)) - 1 ' Ïîëó÷àåì èíäåêñ èìåíè êîëîíêè â ñïèñêå ðàñ÷åòíûõ êîëîíîê
+        
+        If lId > -1 Then ' Ñðàâíèâàåì èìÿ îáðàáàòûâàåìîé êîëîíêè ñî ñïèñêîì ðàñ÷åòíûõ êîëîíîê
+        
+            If o_booCheck Then o_booCheckColumn = True ' Åñëè ñòîèò ìåòêà î íåîáõîäèìîñòè ïðîâåðêè êîëîêíêè òî ñòàâèì ìåòêó ïðîâåðêè êîëîíêè
+            If Not o_booPickup Then sFormat = varFormat(lId) ' Åñëè ýòî âñòàâêà äàííûõ, òî óêàçûâàåì ôîðìàò âñòàâêè äàííûõ
+            
+        End If
+        
+        If o_booPickup Then ' Ïðîâåðÿåì êàêîå äåéñòâèå íóæíî ñîâåðøèòü
+        
+            r_varTable(lonI) = Globals.fn_Data_Get(wshSheet, lonBorders(0), lonBorders(1), varNames(lonI - 1), o_booCheckColumn) ' Îòïðàâëÿåì äàííûå ñ ëèñòà â ìàññèâ
+            
+        Else ' Åñëè äàííûå íóæíî âñòàâèòü íà ëèñò
+        
+            Call Globals.sc_Data_Set(wshSheet, lonBorders(0), varNames(lonI - 1), r_varTable(lonI), sFormat, o_booCheckColumn) ' Âñòàâëÿåì äàííûå íà ëèñò
+            
+        End If
+    
+    Next lonI
+    
+    If Not o_booPickup Then Call Globals.sc_Delete_Fantom_Row(wshSheet, varNames(0)) ' Ñòèðàåì ïîñëåäíþþ ïóñòóþ ñòðîêó êîòîðàÿ ïîÿâëÿåòñÿ ïîñëå âñòàâêè äàííûõ íà ëèñò
+    
+    Erase lonBorders
 
-sCol& = tSheet.Range(borders(0) & ":" & borders(0)).Find(ColHead, , , xlWhole).Column ' Ищем номер колонки
-borders(1) = tSheet.Range(tSheet.Cells(borders(0), sCol), tSheet.Cells(1048576, sCol)).Find("").Row ' Ищем пустую строку в этой колонке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Get_Edges = borders ' Присваеваем возвращаемому значению массив с границами таблицы
+sc_Data_Manipulate_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Data_Manipulate", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
-fn_Global_Get_Edges_Error: ' Инструкции что делать при ошибке
+End Sub
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Edges", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 19:56:49
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Data_Set
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Âñòàâêà äàííûõ íà ëèñò
+' Ïàðàìåòð:     wshSheet (Worksheet) - Ëèñò ñ êîòîðûì áóäåì âçàèìîäåéñòâîâàòü
+' Ïàðàìåòð:     lonStart (Long) - Ïåðâàÿ ñòðîêà ñ êîòîðîé íà÷èíàåòñÿ òàáëèöà
+' Ïàðàìåòð:     strName (String) - Èìÿ êîëîíêè äëÿ âñòàâêè äàííûõ
+' Ïàðàìåòð:     varTable (Variant) - Ìàññèâ äëÿ âñòàâêè
+' Ïàðàìåòð:     strFormat (String) - Ôîðìàò âñòàâêè
+' Ïàðàìåòð:     o_booCheck (Boolean) - Ìåòêà ïðîâåðêè êîëîíêè; Ïî óìîë÷àíèþ - False
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Data_Set(ByVal wshSheet As Worksheet, _
+                       ByVal lonStart As Long, _
+                       ByVal strName As String, _
+                       ByVal varTable As Variant, _
+                       ByVal strFormat As String, _
+                       Optional ByVal o_booCheck As Boolean = False)
 
-Public Function fnG_FilenamesCollection(ByVal FolderPath As String, Optional ByVal Mask As String = "", Optional ByVal SearchDeep As Long = 999) As Object
-    On Error Resume Next ' Защита от ошибок
-    Set fnG_FilenamesCollection = New Collection ' Создаем коллекцию для имен файлов
-    Set FSO = CreateObject("Scripting.FileSystemObject") ' Создаем объект взаимодействия с файловой системой
-    fnG_GetAllFileNamesUsingFSOs FolderPath, Mask, FSO, fnG_FilenamesCollection, SearchDeep ' Производим поиск файлов в указанной папке, по указанной маске поиска
-    Set FSO = Nothing: Application.StatusBar = False ' обнуляем объект для очиськи памяти
-End Function
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
-Public Function fnG_GetAllFileNamesUsingFSOs(ByVal FolderPath As String, ByVal Mask As String, ByRef FSO, ByRef FileNamesColl As Collection, ByVal SearchDeep As Long) ' Поиск файлов по маске в указанной папке
-    On Error Resume Next: Set curfold = FSO.GetFolder(FolderPath) ' Хащита от ошибок
-    If Not curfold Is Nothing Then ' Проверяем что папка существует и ы ней есть что-то
-        For Each fil In curfold.Files ' Перебор элемеетов в папке
-            If fil.Path Like "*" & Mask & "*" Then FileNamesColl.Add fil.Path ' Сравнение найденого элемента с маской поиска
+On Error GoTo sc_Data_Set_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    If o_booCheck Then Call Globals.sc_Column_Check(wshSheet, strName, lonStart)  ' Ïðîâåðÿåì êîëîíêó åñëè ìåòêà = True
+
+    Dim bFormatMark As Boolean: bFormatMark = False
+    Dim sNewFormat As String: sNewFormat = "@"
+    
+    Dim lColumnNum As Long: lColumnNum = wshSheet.Range(lonStart & ":" & lonStart).Find(strName, , , xlWhole).Column ' Èùåì íîìåð êîëîíêè êóäà áóäåì âñòàâëÿòü äàííûå
+    
+    Select Case strFormat ' Ïðîâåðÿåì ôîðìàò âñòàâëÿåìûõ äàííûõ7
+    
+            Case "Text" ' Òåêñòîâûé ôîðìàò
+                    sNewFormat = "@"
+                    bFormatMark = True
+                    
+            Case "All" ' Îáùèé ôîðìàò
+                    sNewFormat = "General"
+                    bFormatMark = True
+                    
+            Case "Number" ' Öåëûå ÷èñëà
+                    sNewFormat = "0"
+                    bFormatMark = True
+                    
+            Case "0.00" ' ×èñëà äî ñîòûõ
+                    sNewFormat = "0.00"
+                    bFormatMark = True
+                    
+            Case "Date" ' Äàòà
+                    sNewFormat = "m/d/yyyy"
+                    bFormatMark = True
+                    
+            Case "Money" ' Ôèíàíñîâûé
+                    sNewFormat = "_($* #,##0.00_);_($* (#,##0.00);_($* ""-""??_);_(@_)"
+                    bFormatMark = True
+                    
+    End Select
+        
+    If bFormatMark Then wshSheet.Range(wshSheet.Cells(lonStart, lColumnNum), wshSheet.Cells(lonStart + UBound(varTable) - 1, lColumnNum)).NumberFormat = sNewFormat ' äèàïàçîí êóäà áóäåì âñòàâëÿòü ïðåîáðàçóåì â íóæíûé ôîðìàò
+    wshSheet.Range(wshSheet.Cells(lonStart, lColumnNum), wshSheet.Cells(lonStart + UBound(varTable) - 1, lColumnNum)) = varTable ' âñòàâëÿåì äàííûå
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Data_Set_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Data_Set", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 20:17:50
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Delete_Fantom_Row
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Óäàëèòü ïóñòóþ ñòðîêó â òàáëèöå êîòîðàÿ íåèçáåæíî âîçíèêàåò ïðè âñòàâêå äàííûõ ÷åðåç [Data_Set]
+' Ïàðàìåòð:     wshSheet {Worksheet} - Ëèñò ñ êîòîðûì áóäåì âçàèìîäåéñòâîâàòü
+' Ïàðàìåòð:     strName {String} - Èì êîëîíêè ïî êîòîðîé áóäåò îïðåäåëÿòüñÿ ãðàíèöà òàáëèöû. Íå äîëæíî ñîäåðàæàòü ïóñòûõ ñòðîê è æåäàòåëüíî íå áûòü ïåðâîé íà ëèñòå
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Delete_Fantom_Row(ByVal wshSheet As Worksheet, _
+                                ByVal strName As String)
+
+On Error GoTo sc_Delete_Fantom_Row_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim lonI As Long, lonColumn As Long, lonFantom As Long
+
+    For lonI = 1 To 1048576 ' Ïåðåäèðàåì ñòðîêè ëèñòà
+
+        If Not wshSheet.Range(lonI & ":" & lonI).Find(strName, , , xlWhole) Is Nothing Then Exit For ' Êîãäà â ñòðîêå íàõîäèì èñêîìóþ êîëîíêó ïðåðûâàåì öèêë
+    
+    Next lonI
+    
+    lonColumn = wshSheet.Range(lonI & ":" & lonI).Find(strName, , , xlWhole).Column ' Íàäèì íîìåð êîëîíêè ïî êîòîðîé îïðåäåëèì ãðàíèöû òàáëèöû
+    lonFantom = wshSheet.Range(wshSheet.Cells(lonI, lonColumn), wshSheet.Cells(1048576, lonColumn)).Find("").Row ' Íàõîäèì ôàíòîìíóþ ñòðîêó
+    wshSheet.Rows(lonFantom & ":" & lonFantom).Delete Shift:=xlUp ' Óäàëÿåì ôàíòîìíóé ñòðîêó
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Delete_Fantom_Row_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Delete_Fantom_Row", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 20:25:35
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Error_Logger
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ëîãèðîâàíèå îøèáîê
+' Ïàðàìåòð:     objError {Object} - Îáúåêò îøèáêè
+' Ïàðàìåòð:     strModule {String} - Èìÿ ìîäóëÿ ãäå ïðîèçîøëà îøèáêà
+' Ïàðàìåòð:     strMethod {String} - Èìÿ îáúåêòà ãäå ïðîèçîøëà îøèáêà
+' Ïàðàìåòð:     o_douVersion {Double} - Íîìåð âåðñèè ìîäóëÿ ; Ïî óìîë÷àíèþ: "0"
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Error_Logger(ByVal objError As Object, _
+                           ByVal strModule As String, _
+                           ByVal strMethod As String, _
+                           Optional ByVal o_douVersion As Double = "0")
+
+'On Error Resume Next ' Èãíîðèðîâàíèå îøèáêè
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim strText As String, strFile As String
+    
+    strText = Now() & vbTab & ActiveWorkbook.Name & vbTab & Environ("COMPUTERNAME") & vbTab & Environ("USERNAME") & vbTab & strModule & vbTab & o_douVersion & vbTab & strMethod & vbTab & objError.Number & vbTab & Replace(objError.Description, vbNewLine, " | ") & vbTab & objError.Source
+    
+    strFile = ThisWorkbook.Path & "\Æóðíàë îøèáîê.txt"
+    
+    Call Globals.sc_String_In_TXT(strText, strFile)
+
+    Err.Clear
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:13:26
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_File_Delete
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Óäàëèòü óêàçàííûé ôàéë
+' Ïàðàìåòð:     strFile {String} - Ïîëíîå èìÿ ôàéëà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_File_Delete(ByVal strFile As String)
+
+On Error GoTo sc_File_Delete_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Kill strFile ' Óäàëÿåì ôàéë
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_File_Delete_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_File_Delete", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:15:50
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_File_Done
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïåðåèìåíîâàòü îáðàáîòàííûé ôàéë
+' Ïàðàìåòð:     strFile {String} - Ïîëíîå èìÿ ôàéëà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_File_Done(ByVal strFile As String)
+
+On Error GoTo sc_File_Done_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim strNew As String
+    
+    strNew = Left(strFile, Len(strFile) - InStr(StrReverse(strFile), "\")) & "\" & Environ("USERNAME") & " " & Right(strFile, InStr(StrReverse(strFile), "\") - 1) ' Íîâîå èìÿ ôàéëà
+    
+    Name strFile As strNew ' Ïåðåèìåíîâûâàåì âñòàâëÿÿ â íà÷àëî èìåíè ôàéëà - èìÿ þçåðà îáðàáîòàâøåãî ôàéë
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_File_Done_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_File_Done", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:28:44
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Filters_Off_All
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ñíÿòü âñå ôèëüòðà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Filters_Off_All()
+
+On Error GoTo sc_Filters_Off_All_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    If ActiveSheet.FilterMode Then ActiveSheet.ShowAllData
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Filters_Off_All_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Filters_Off_All", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:46:31
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Filter_Set
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Óñòàíîâèòü ôèëüòð â àêòèâíîé êîëîíêå ïî ñïèñêó çíà÷åíèé
+' Ïàðàìåòð:     r_strValues() {String} - Ìàññèâ çíà÷åíèé ôèëüòðà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Filter_Set(ByRef r_strValues() As String)
+
+On Error GoTo sc_Filter_Set_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    ActiveSheet.UsedRange.AutoFilter Field:=ActiveCell.Column, Criteria1:=r_strValues, Operator:=xlFilterValues ' Ñòàâèì ôèëüòð
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Filter_Set_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Filter_Set", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 06:59:27
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Get_Files_Names
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïîëó÷èòü ñïèñîê ôàéëîâ
+' Ïàðàìåòð:     strFolder {String} - Ïàïêà â êîòîðîé íóæíî ïðîèçâåñòè ïîèñê
+' Ïàðàìåòð:     strMask {String} - Ìàñêà ïîèñêà
+' Ïàðàìåòð:     r_objFso {Object} - Îáúåêò âçàèìîäåéñòâèÿ ñ ôàéëîâîé ñèñòåìîé
+' Ïàðàìåòð:     r_colFiles {Collection} - Êîëëåêöèÿ èìåí ôàéëîâ
+' Ïàðàìåòð:     intDeep {Integer} - Ãëóáèíà ïîèñêà â ïîäïàïêàõ
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Get_Files_Names(ByVal strFolder As String, _
+                              ByVal strMask As String, _
+                              ByRef r_objFso As Object, _
+                              ByRef r_colFiles As Collection, _
+                              ByVal intDeep As Integer)
+
+On Error Resume Next ' Èãíîðèðîâàíèå îøèáêè
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim objCurFold As Object, objFile As Object, objFol As Object
+    
+    Set objCurFold = r_objFso.GetFolder(strFolder)
+    
+    If Not objCurFold Is Nothing Then ' Ïðîâåðÿåì ÷òî ïàïêà ñóùåñòâóåò è â íåé åñòü ÷òî-òî
+    
+        For Each objFile In objCurFold.Files ' Ïåðåáîð ýëåìååòîâ â ïàïêå
+        
+            If objFile.Path Like "*" & strMask & "*" Then r_colFiles.Add objFile.Path ' Ñðàâíåíèå íàéäåíîãî ýëåìåíòà ñ ìàñêîé ïîèñêà
+            
         Next
-        SearchDeep = SearchDeep - 1 ' Уменьшаем глубину поиска
-        If SearchDeep Then
-            For Each sfol In curfold.SubFolders
-                fnG_GetAllFileNamesUsingFSOs sfol.Path, Mask, FSO, FileNamesColl, SearchDeep
+        
+        intDeep = intDeep - 1 ' Óìåíüøàåì ãëóáèíó ïîèñêà
+        
+        If intDeep Then
+        
+            For Each objFol In objCurFold.SubFolders
+            
+                sc_Get_Files_Names objFol.Path, strMask, r_objFso, r_colFiles, intDeep
+                
             Next
+            
         End If
-        Set fil = Nothing: Set curfold = Nothing ' Удаляем объекты очищаем память
+        
+        Set objFile = Nothing: Set objCurFold = Nothing: Set objFol = Nothing ' Óäàëÿåì îáúåêòû î÷èùàåì ïàìÿòü
+        
     End If
-End Function
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+End Sub
+
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Get_Data(ByVal nSheet As Object, _
-                                   ByVal fRow As Long, _
-                                   ByVal lRow As Long, _
-                                   ByVal ColName As String, _
-                                   Optional ByVal checkcol As Boolean = False) As Variant
-' Создано: 2020.02.27 10:32:19
-' Автор: dmitry.shevchenko
-' <summary> Данные с листа отправить в массив </summary>
-' <param name="nSheet"> Лист с которого будем получать данные </param>
-' <param name="fRow"> Первая строка на листе где шапка таблицы </param>
-' <param name="lRow"> Первая пустая строка после окончания таблицы </param>
-' <param name="ColName"> Имя столбца из которого будем брать данные </param>
-' <param name="checkcol"> Маркер нужно ли проверять наличие колонки и очищать ее </param>
-' <returns> Двумерный массив данных с листа </return>
-
-On Error GoTo fn_Global_Get_Data_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-If checkcol Then Call sc_Global_Check_Column(nSheet, ColName, fRow) ' Если стоит индикатор проверки колонки, то выполняем ее
-
-tCol& = nSheet.Range(fRow & ":" & fRow).Find(ColName, , , xlWhole).Column ' Получаем номер колонки
-fn_Global_Get_Data = nSheet.Range(nSheet.Cells(fRow, tCol), nSheet.Cells(lRow, tCol)) ' Берем данные
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
-
-fn_Global_Get_Data_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Data", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
+' Ñîçäàíî:      2020.04.06 07:33:02
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Option_Create_Sheet
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ñîçäàòü ëèñò îïöèé
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Get_Id(ByVal arr As Variant, _
-                                 ByVal searchkey As String) As Long
-' Создано: 2020.02.26 18:00:20
-' Автор: dmitry.shevchenko
-' <summary> Получить индекс значения в массиве </summary>
-' <param name="arr"> Массив в котором будем искать индекс элемента </param>
-' <param name="searchkey"> Элемент индекс которого будем искать </param>
-' <returns> Индекс элемента в массиве </return>
+Public Sub sc_Option_Create_Sheet()
 
-On Error GoTo fn_Global_Get_Id_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+On Error GoTo sc_Option_Create_Sheet_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-For i& = LBound(arr) To UBound(arr) ' цикл перебора элементов массива
+    Worksheets.Add.Name = "Îïöèè" ' Ñîçäàåì ëèñò
+    Worksheets("Îïöèè").Range("A1:B1") = Array("Îïöèÿ", "Çíà÷åíèå") ' Ñîçäàåì òàáëèöó îïöèé
+    Worksheets("Îïöèè").Visible = False ' Ñêðûâàåì ëèñò
 
-    If arr(i) = searchkey Then fn_Global_Get_Id = i + 1: Exit Function ' Сравнение элента с искомым значением. При совпадении выход из цикла. Индекс элемента увеличиваем на 1 т.к. массив начинается с 0
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
 
-Next i
+sc_Option_Create_Sheet_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Option_Create_Sheet", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
 
-fn_Global_Get_Id_Error: ' Инструкции что делать при ошибке
+End Sub
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Id", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Set_Option(ByVal param As String, _
-                                     ByVal valstring As String) As Boolean
-' Создано: 2020.02.26 17:42:29
-' Автор: dmitry.shevchenko
-' <summary> Сохранить значение опции. Для этого в книге должен быть лист с именем "Опции", на котором в столбце "А" должны быть названия опций, а в столбце "В" - значения </summary>
-' <param name="param"> Название опции </param>
-' <param name="valstring"> Значение опции </param>
-' <returns> True - если удалось сохранить значение опции. False - если не удалось </return>
+' Ñîçäàíî:      2020.04.06 08:28:30
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Screen_Updating
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Âêëþ÷åíèå/Îòêëþ÷åíèå îáíîâëåíèÿ ýêðàíà
+' Ïàðàìåòð:     booAct {Boolean} - Âûïîëíÿåìîå äåéñòâèå. True - âêëþ÷èòü îáíîâëåíèå. False - îòêëþ÷àåì
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Screen_Updating(ByVal booAct As Boolean)
 
-On Error GoTo fn_Global_Set_Option_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+On Error GoTo sc_Screen_Updating_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-fn_Global_Set_Option = False ' Значение по умолчанию
-
-If Not Worksheets("Опции").Range("A:A").Find(param, , , xlWhole) Is Nothing Then ' Поиск такой опции
-
-    Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value = valstring ' Если опция найдена, то присваеваем новое значние
+    Application.ScreenUpdating = booAct
+    Application.ShowWindowsInTaskbar = booAct
+    Application.AskToUpdateLinks = booAct
+    Application.DisplayAlerts = booAct
+    Application.EnableEvents = booAct
+    Application.DisplayStatusBar = booAct
     
-Else
-
-    nRow& = Worksheets("Опции").Range("A:A").Find("", , , xlWhole).Row ' Если опция не найдена, ищем пустую строку
-    Worksheets("Опции").Cells(nRow, 1).Value = param ' Вписываем название опции
-    Worksheets("Опции").Cells(nRow, 2).Value = valstring ' Вписываем значение опции
+    If booAct Then
     
-End If
-
-fn_Global_Set_Option = True ' Присваеваем положительное возвращаемое значение означающее что значение опции сохранено
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
-
-fn_Global_Set_Option_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Set_Option", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Get_Option(ByVal param As String) As String
-' Создано: 2020.02.26 17:18:19
-' Автор: dmitry.shevchenko
-' <summary> Получить значение опции по ее имени. Для этого в книге должен существовать лист и именем "Опции", в колонке "А" должны быть имена опций, а в колонке "В" - значения опций </summary>
-' <param name="param"> Название опции значение которой нужно получить </param>
-' <returns> Строку сожержащую значение опции </return>
-
-On Error GoTo fn_Global_Get_Option_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-fn_Global_Get_Option = "Опция не получена!" ' Значение по умолчанию
-
-fn_Global_Get_Option = Worksheets("Опции").Cells(Worksheets("Опции").Range("A:A").Find(param, , , xlWhole).Row, 2).Value ' Поиск значения
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-Exit Function ' Завершение работы
-
-fn_Global_Get_Option_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Get_Option", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Open_File_Read_Only(ByVal file As String) As Boolean
-' Создано: 2020.02.26 17:25:13
-' Автор: dmitry.shevchenko
-' <summary> Открыть файл под чтением </summary>
-' <param name="file"> Полный путь к файлу </param>
-' <returns> True - если получилось открыть файл. False - если не получилось </return>
-
-On Error GoTo fn_Global_Open_File_Read_Only_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-fn_Global_Open_File_Read_Only = False ' Значение по умолчанию для проверки открытия файла
-
-Workbooks.Open filename:=file, Format:=6, Delimiter:=";", Local:=True, ReadOnly:=True ' Открываем файл под чтением
-
-fn_Global_Open_File_Read_Only = True ' Значение для проверки открытия файла
-
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
-
-fn_Global_Open_File_Read_Only_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Open_File_Read_Only", ModuleVersion) ' Вызов обработчика ошибок
-
-End Function
-' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Filter_Vals() As Variant
-' Создано: 2020.02.26 17:09:26
-' Автор: dmitry.shevchenko
-' <summary> Получить список значений установленных фильтров </summary>
-' <returns> Массив строк содержащий значения установленных фильтров. Размер массива будет соответствовать количеству колонок. Если значений несколько, то они будут разделены запятой с пробелом </return>
-
-On Error GoTo fn_Global_Filter_Vals_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-Dim fil As Object: Set fil = ActiveSheet.AutoFilter
-
-ReDim vals(fil.Filters.Count) As String
-
-Dim i As Integer: i = 0
-
-For Each tfil In fil.Filters
-    On Error Resume Next
-    temp = ""
-    temp = tfil.Criteria1
-    temp2 = ""
-    temp2 = tfil.Criteria2
-    i = i + 1
-    If TypeName(temp) = "Variant()" Then
-        For zx& = LBound(temp) To UBound(temp)
-        If vals(i) = "" Then
-            vals(i) = temp(zx)
-        Else
-            vals(i) = vals(i) & "," & temp(zx)
-        End If
-        Next zx
+        Application.EnableCancelKey = xlInterrupt
+        Application.Calculation = xlCalculationAutomatic
+        Application.DisplayCommentIndicator = xlCommentAndIndicator
+        
     Else
-        vals(i) = temp
-        If temp2 <> "" Then vals(i) = vals(i) & "," & temp2
+    
+        Application.EnableCancelKey = xlDisabled
+        Application.Calculation = xlCalculationManual
+        Application.DisplayCommentIndicator = xlNoIndicator
+        
     End If
 
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Screen_Updating_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Screen_Updating", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.05 19:17:30
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Sheet_Clear
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Î÷èñòêà óêàçàííîãî ëèñòà
+' Ïàðàìåòð:     objSheet {Object} - Ëèñò íà êîòîðîì áóäåì óäàëÿòü äàííûå
+' Ïàðàìåòð:     lonRow {Long} - Íîìåð ñòðîêè ñ êîòîðîé áóäåì î÷èùàòü
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Sheet_Clear(ByVal objSheet As Object, _
+                          ByVal lonRow As Long)
+
+On Error GoTo sc_Sheet_Clear_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    lonRow = IIf(objSheet.UsedRange.Rows.Count > lonRow, objSheet.UsedRange.Rows.Count, lonRow + 1)
+    objSheet.Rows(lonRow & ":" & lonRow).Delete Shift:=xlUp
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Sheet_Clear_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Sheet_Clear", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.06 08:31:29
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_String_In_TXT
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Çàïèñàòü ñòðîêó â òåêñòîâûé ôàéë
+' Ïàðàìåòð:     strText {String} - Çàïèñûâàåìàÿ ñòðîêà
+' Ïàðàìåòð:     strFile {String} - Ïîëíîå èìÿ ôàéëà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_String_In_TXT(ByVal strText As String, _
+                            ByVal strFile As String)
+
+'On Error Resume Next: Exit Sub ' Âûõîä èç ïðîöåäóðû
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim objFSO As Object, objTextFile As Object
     
-Next
+    Set objFSO = CreateObject("scripting.filesystemobject") ' Ñîçäàåì îáúåêò âçàèìîåéñòâèÿ ñ ôàéëîâîé ñèñòåìîé
+    Set objTextFile = objFSO.OpenTextFile(strFile, 8, True) ' Îòêðûâàåì ôàéë
+    
+    objTextFile.Write vbNewLine & strText: objTextFile.Close ' Çàïèñûâàåì ñòðîêó
+    
+    Set objTextFile = Nothing: Set objFSO = Nothing ' ×èñòèì ïàìÿòü
 
-fn_Global_Filter_Vals = vals
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
+End Sub
 
-fn_Global_Filter_Vals_Error: ' Инструкции что делать при ошибке
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.07 08:24:09
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_File_Exists
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïðîâåðèòü ñóùåñòâóåò ëè ôàéë
+' Ïàðàìåòð:     strFile {String} - Ïîëíîå èìÿ ôàéëà
+' Âåðí¸ò:       Boolean - True/False, â çàâèñèìîñòè îò òîãî ñóùåñòâóåò ëè ôàéë
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_File_Exists(ByVal strFile As String) As Boolean
 
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Filter_Vals", ModuleVersion) ' Вызов обработчика ошибок
+On Error GoTo fn_File_Exists_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_File_Exists = Len(Dir(strFile)) > 0 ' Ïðîâåðÿåì ñóùåñòâóåò ëè ôàéë
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_File_Exists_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "fn_File_Exists", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.07 17:15:31
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Clipboard_Send
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Îòïðàâèòü äàííûå â áóôåð îáìåíà
+' Ïàðàìåòð:     strText {String} - Òåêñò îòïðàâëÿåìûé â áóôåð
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Clipboard_Send(ByVal strText As String)
+
+On Error GoTo sc_Clipboard_Send_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Dim objClip As Object: Set objClip = GetObject("New:1C3B4210-F441-11CE-B9EA-00AA006B1A69")
+    objClip.SetText strText: objClip.PutInClipboard
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Clipboard_Send_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Clipboard_Send", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Àâòîð:        Øåâ÷åíêî
+' Ñîçäàíî:      31.03.2020 07:33
+' Íàçâàíèå:     fn_Unique_Values
+' Îïèñàíèå:     Âûáðàòü èç óêàçàíîãî äèàïàçîíà óíèêàëüíûå çíà÷åíèÿ
+' Òèï:          Function
+' Äîñòóï:       Public
+' Âîçâðàùàåò:   Variant()
+' objRange (Range): Äèàïàçîí èç êîòîðîãî âûáèðàòü óíèêàëüíûå çíà÷åíèÿ
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Unique_Values(ByVal objRange As Range) As Variant()
+
+    Dim vResult() As Variant, lIndex As Long, sText As String, vTemp As Variant
+    vResult = Intersect(objRange.Parent.UsedRange, objRange).Value
+    
+    On Error Resume Next: Err.Clear
+    
+    With New Collection
+    
+        For Each vTemp In vResult()
+        
+            If TypeName(vTemp) = "Boolean" Then vTemp = IIf(vTemp, "ÈÑÒÈÍÀ", "ËÎÆÜ")
+        
+            sText = Trim(vTemp)
+            
+            If Len(sText) > 0 Then
+            
+              If IsEmpty(.Item(sText)) Then
+              
+                For lIndex = 1 To .Count
+                
+                  If sText < .Item(lIndex) Then Exit For
+                  
+                Next
+                
+                  If lIndex > .Count Then .Add sText, sText Else .Add sText, sText, Before:=lIndex
+                  
+              End If
+              
+            End If
+            
+        Next
+        
+        ReDim vResult(1 To .Count)
+        
+        For lIndex = 1 To .Count
+        
+            vResult(lIndex) = .Item(lIndex)
+            
+        Next
+        
+    End With
+
+    fn_Unique_Values = vResult
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.12 10:37:28
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Week_Day_Name
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïîëó÷èòü èìÿ äíÿ íåäåëè íà ðóññêîì ïî íîìåðó
+' Ïàðàìåòð:     bytDay {Byte} - Íîìåð äíÿ íåäåëè îò 1 äî 7
+' Âåðí¸ò:       String - Äåíü íåäåëè
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Week_Day_Name(ByVal bytDay As Byte) As String
+
+On Error GoTo fn_Week_Day_Name_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    ReDim strArray(1 To 7) As String
+    strArray(1) = "Ïîíåäåëüíèê"
+    strArray(2) = "Âòîðíèê"
+    strArray(3) = "Ñðåäà"
+    strArray(4) = "×åòâåðã"
+    strArray(5) = "Ïÿòíèöà"
+    strArray(6) = "Ñóááîòà"
+    strArray(7) = "Âîñêðåñåíüå"
+    
+    fn_Week_Day_Name = strArray(bytDay)
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
+
+fn_Week_Day_Name_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+fn_Week_Day_Name = CStr(bytDay)
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
-Public Function fn_Global_Between_To_Dates(ByVal CheckDate As String, _
-                                           ByVal FirstDate As String, _
-                                           ByVal SecondDate As String) As Variant
-' Создано: 2020.03.05 14:37:34
-' Автор: dmitry.shevchenko
-' <summary> Сравнение дат </summary>
-' <param name="CheckDate"> Проверяемая дата </param>
-' <param name="FirstDate"> Дата начала </param>
-' <param name="SecondDate"> Дата окончания </param>
-' <returns> Массив из двух элементов - True/False и комментария </return>
+' Ñîçäàíî:      2020.04.12 10:50:11
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     fn_Month_Name
+' Òèï:          Function
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ïîëó÷èòü Ðóññêîå íàçâàíèå ìåñÿöà ïî åãî íîìåðó
+' Ïàðàìåòð:     bytMonth {Byte} - Íîìåð ìåñÿöà îò 1 äî 12
+' Âåðí¸ò:       String - Èìÿ ìåñÿöà
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Month_Name(ByVal bytMonth As Byte) As String
 
-On Error GoTo fn_Global_Between_To_Dates_Error ' При ошибке переход по метке
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+On Error GoTo fn_Month_Name_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
-ReDim result(1 To 2) As Variant: result(1) = False: result(2) = "По умолчанию"
+    ReDim strArray(1 To 12) As String
+          strArray(1) = "ßíâàðü"
+          strArray(2) = "Ôåâðàëü"
+          strArray(3) = "Ìàðò"
+          strArray(4) = "Àïðåëü"
+          strArray(5) = "Ìàé"
+          strArray(6) = "Èþíü"
+          strArray(7) = "Èþëü"
+          strArray(8) = "Àâãóñò"
+          strArray(9) = "Ñåíòÿáðü"
+          strArray(10) = "Îêòÿáðü"
+          strArray(11) = "Íîÿáðü"
+          strArray(12) = "Äåêàáðü"
+          
+    fn_Month_Name = strArray(bytMonth)
 
-If CDate(CheckDate) < CDate(FirstDate) Then
-    result(2) = "Рано"
-ElseIf CDate(CheckDate) > CDate(SecondDate) Then
-    result(2) = "Поздно"
-Else
-    result(1) = True
-    result(2) = "Ок"
-End If
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Çàâåðøåíèå ðàáîòû
 
-fn_Global_Between_To_Dates = result
+fn_Month_Name_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
 
-' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-Exit Function ' Завершение работы
-
-fn_Global_Between_To_Dates_Error: ' Инструкции что делать при ошибке
-
-Call sc_Global_Error_Log(Err, "Globals", "fn_Global_Between_To_Dates", ModuleVersion) ' Вызов обработчика ошибок
+fn_Month_Name = CStr(bytMonth)
 
 End Function
 ' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Ñîçäàíî:      2020.04.12 17:16:20
+' Ñîçäàòåëü:    Øåâ÷åíêî Äìèòðèé <primalevil@gmail.com>
+' Íàçâàíèå:     sc_Create_Folder
+' Òèï:          Sub
+' Äîñòóï:       Public
+' Îïèñàíèå:     Ñîçäàòü ïàïêó
+' Ïàðàìåòð:     strPath {String} - Ïóòü ê ïàïêå
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Create_Folder(ByVal strPath As String)
 
+On Error GoTo sc_Create_Folder_Error ' Ïðè îøèáêå ïåðåõîä ïî ìåòêå
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objFSO As Object
+Dim varTemp As Variant
+Dim intI As Integer
+Dim strTemp As String
+
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+
+    varTemp = Split(strPath, "\")
+    strTemp = ""
+    
+    For intI = 0 To UBound(varTemp)
+        If varTemp(intI) <> "" Then
+            strTemp = strTemp & varTemp(intI) & "\"
+                If objFSO.FolderExists(strTemp) = False Then MkDir strTemp
+        End If
+    Next
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Çàâåðøåíèå ðàáîòû
+
+sc_Create_Folder_Error: ' Èíñòðóêöèè ÷òî äåëàòü ïðè îøèáêå
+
+Call Globals.sc_Error_Logger(Err, "Globals", "sc_Create_Folder", MODULEVERSION)  ' Âûçîâ îáðàáîò÷èêà îøèáîê
+
+End Sub
