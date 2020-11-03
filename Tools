@@ -1,0 +1,716 @@
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.11.03 09:37:26
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Имя:          Tools
+' Тип:          Module
+' Описание:     Разные полезные инструменты
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Option Explicit
+Private Const MODULEVERSION As Double = 1.001 ' Номер версии модуля
+Private Const MODULENAME As String = "Tools" ' Имя модуля
+Private Const DEBUGGING As Boolean = False ' Включение\Выключение режима отладки
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.06 08:31:29
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_String_In_TXT
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Записать строку в текстовый файл
+' Параметр:     strText {String} - Записываемая строка
+' Параметр:     strFile {String} - Полное имя файла
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_String_In_TXT(ByVal strText As String, _
+                            ByVal strFile As String)
+
+If Not DEBUGGING Then On Error Resume Next ' Игнорирование ошибки
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objFSO As Object      ' Объект взаимодействия с файловой системой
+Dim objTextFile As Object ' Объект ссылка на файл
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Set objFSO = CreateObject("scripting.filesystemobject") ' Создаем объект взаимоействия с файловой системой
+    Set objTextFile = objFSO.OpenTextFile(strFile, 8, True) ' Открываем файл
+    
+    objTextFile.Write vbNewLine & strText: objTextFile.Close ' Записываем строку
+    
+    Set objTextFile = Nothing: Set objFSO = Nothing ' Чистим память
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Err.Clear
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.05 20:25:35
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_Error_Logger
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Логирование ошибок
+' Параметр:     objError {Object} - Объект ошибки
+' Параметр:     strModule {String} - Имя модуля где произошла ошибка
+' Параметр:     strMethod {String} - Имя объекта где произошла ошибка
+' Параметр:     o_douVersion {Double} - Номер версии модуля ; По умолчанию: "0"
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Error_Logger(ByVal objError As Object, _
+                           ByVal strModule As String, _
+                           ByVal strMethod As String, _
+                           Optional ByVal o_douVersion As Double = "0")
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim strText As String
+Dim strFile As String
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    strText = Now() & vbTab & _
+              Environ("COMPUTERNAME") & vbTab & _
+              Environ("USERNAME") & vbTab & _
+              ActiveWorkbook.Name & vbTab & _
+              objError.Source & vbTab & _
+              strModule & vbTab & _
+              o_douVersion & vbTab & _
+              strMethod & vbTab & _
+              objError.Number & vbTab & _
+              Replace(objError.Description, vbNewLine, " | ")
+    
+    strFile = Environ("HOMEDRIVE") & Environ("HOMEPATH") & "\Desktop\Журнал ошибок.txt"
+    
+    Call Tools.sc_String_In_TXT(strText, strFile)
+
+    Err.Clear
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.06 06:13:26
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_File_Delete
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Удалить указанный файл
+' Параметр:     strFile {String} - Полное имя файла
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_File_Delete(ByVal strFile As String)
+
+If Not DEBUGGING Then On Error GoTo sc_File_Delete_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Kill strFile ' Удаляем файл
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_File_Delete_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "sc_File_Delete", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.05 07:51:29
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Add_Symbols
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Добавить в начало строки символы до указанной длины
+' Параметр:     strValue {String} - Значение к которому будем добавлять символы
+' Параметр:     intLength {Integer} - Конечная длина строки. Не более 255
+' Параметр:     o_strSymbol {String} - Добавляемый символ
+' Параметр:     o_booWhere {Boolean} - Где добавляем? True - в начале, False - в конце
+' Возвращает:   {String} - Строка с добавленными в начало символами
+' Переменная:   lonInd {Long} - Счетчик для цикла
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Add_Symbols(ByVal strValue As String, _
+                               ByVal intLength As Integer, _
+                               Optional ByVal o_strSymbol As String = "0", _
+                               Optional ByVal o_booWhere As Boolean = True) As String
+
+If Not DEBUGGING Then On Error GoTo fn_Add_Symbols_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim lonInd As Long
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    If Len(strValue) < intLength Then ' Проверка количество символов
+        
+        For lonInd = 1 To intLength - Len(strValue) ' Инициализация циклa
+            
+            strValue = IIf(o_booWhere, o_strSymbol & strValue, strValue & o_strSymbol)  ' Добавляем нули
+            
+        Next
+        
+    End If
+
+    fn_Add_Symbols = strValue
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Add_Symbols_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "fn_Add_Symbols", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.06 07:20:26
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Get_Id
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Получить номер элемента массива по его значению
+' Параметр:     varArray {Variant} - Массив элементов
+' Параметр:     strValue {String} - Искомое значение
+' Вернёт:       Long - Номер элемента массива
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Get_Id(ByVal varArray As Variant, _
+                          ByVal strValue As String) As Long
+
+If Not DEBUGGING Then On Error GoTo fn_Get_Id_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim lonI As Long
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_Get_Id = 0
+    
+    For lonI = LBound(varArray) To UBound(varArray) ' цикл перебора элементов массива
+
+        If varArray(lonI) = strValue Then ' Сравнение элента с искомым значением. При совпадении выход из цикла. Индекс элемента увеличиваем на 1 т.к. массив начинается с 0
+        
+            fn_Get_Id = lonI + 1
+            Exit Function
+            
+        End If
+        
+    Next lonI
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Get_Id_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "fn_Get_Id", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.05 09:34:51
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Sheet_Check
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Проверка существует ли лист
+' Параметр:     strName {String} - Имя листа который нужно проверить
+' Вернёт:       Boolean - Результат проверки существует ли лист или нет
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Sheet_Check(ByVal strName As String) As Boolean
+
+If Not DEBUGGING Then On Error GoTo fn_Sheet_Check_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objSheet As Object
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_Sheet_Check = False
+
+    Set objSheet = Worksheets(strName)
+
+    fn_Sheet_Check = True
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Sheet_Check_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "fn_Sheet_Check", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Function
+
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.06 06:59:27
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_Get_Files_Names
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Получить список файлов
+' Параметр:     strFolder {String} - Папка в которой нужно произвести поиск
+' Параметр:     strMask {String} - Маска поиска
+' Параметр:     r_objFso {Object} - Объект взаимодействия с файловой системой
+' Параметр:     r_colFiles {Collection} - Коллекция имен файлов
+' Параметр:     intDeep {Integer} - Глубина поиска в подпапках
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Get_Files_Names(ByVal strFolder As String, _
+                              ByVal strMask As String, _
+                              ByRef r_objFso As Object, _
+                              ByRef r_colFiles As Collection, _
+                              ByVal intDeep As Integer)
+
+If Not DEBUGGING Then On Error Resume Next ' Игнорирование ошибки
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objCurFold As Object
+Dim objFile As Object
+Dim objFol As Object
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Set objCurFold = r_objFso.GetFolder(strFolder)
+    
+    If Not objCurFold Is Nothing Then ' Проверяем что папка существует и в ней есть что-то
+    
+        For Each objFile In objCurFold.Files ' Перебор элемеетов в папке
+        
+            If objFile.Path Like "*" & strMask & "*" Then r_colFiles.Add objFile.Path ' Сравнение найденого элемента с маской поиска
+            
+        Next
+        
+        intDeep = intDeep - 1 ' Уменьшаем глубину поиска
+        
+        If intDeep Then
+        
+            For Each objFol In objCurFold.SubFolders
+            
+                sc_Get_Files_Names objFol.Path, strMask, r_objFso, r_colFiles, intDeep
+                
+            Next
+            
+        End If
+        
+        Set objFile = Nothing: Set objCurFold = Nothing: Set objFol = Nothing ' Удаляем объекты очищаем память
+        
+    End If
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Err.Clear
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.06 06:21:18
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Files_Names_Collection
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Создать коллекцию имен файлов найденных в указанной папке по маске
+' Параметр:     strFolder {String} - Папка в которой производить поиск
+' Параметр:     strMask {String} - Маска поиска
+' Параметр:     lonDeep {Long} - Глубина поиска в подпапках. Максимально 999
+' Вернёт:       Collection - Коллекцию имен файлов
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Files_Names_Collection(ByVal strFolder As String, _
+                                          ByVal strMask As String, _
+                                          ByVal lonDeep As Long) As Collection
+
+If Not DEBUGGING Then On Error Resume Next ' Игнорирование ошибки
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objFSO As Object
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Set fn_Files_Names_Collection = New Collection ' Создаем коллекцию для имен файлов
+    Set objFSO = CreateObject("Scripting.FileSystemObject") ' Создаем объект взаимодействия с файловой системой
+    Tools.sc_Get_Files_Names strFolder, strMask, objFSO, fn_Files_Names_Collection, lonDeep ' Производим поиск файлов в указанной папке, по указанной маске поиска
+    Set objFSO = Nothing
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Err.Clear
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.08.07 10:11:06
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_Add_String
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Добавить строку
+' Параметр:     r_strText {String} - Текст к которому добавляем
+' Параметр:     strAdd {String} - Строка которую добавляем
+' Параметр:     o_strChar {String} - Разделитель; По умолчанию: "; "
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Add_String(ByRef r_strText As String, _
+                         ByVal strAdd As String, _
+                         Optional ByVal o_strChar As String = "; ")
+
+If Not DEBUGGING Then On Error GoTo sc_Add_String_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    If r_strText = "" Then
+    
+        r_strText = strAdd
+        
+    Else
+    
+        If InStr(r_strText, strAdd) = 0 Then r_strText = r_strText & o_strChar & strAdd
+        
+    End If
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Add_String_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "sc_Add_String", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.07.27 15:49:53
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Folder_Select
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Отобразить диалог выбора папки
+' Параметр:     o_strFolder {String} - Ничальная папка; По умолчанию: "C:\Temp\"
+' Параметр:     o_strCaption {String} - Заголовок окна; По умолчанию: "Выберите папку"
+' Параметр:     o_strButton {String} - Надпись на кнопке; По умолчанию: "Выбрать папку"
+' Вернёт:       String - Путь к папке
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Folder_Select(Optional ByVal o_strFolder As String = "C:\Temp\", _
+                                 Optional ByVal o_strCaption As String = "Выберите папку", _
+                                 Optional ByVal o_strButton As String = "Выбрать папку") As String
+
+If Not DEBUGGING Then On Error GoTo fn_Folder_Select_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objFD As Object ' Объект диалогового окна выбора
+Dim strResult As String ' Результат выбора
+' -   -   -   -   -   -   -   -   -   -   -   -   -
+    
+    Set objFD = Application.FileDialog(msoFileDialogFolderPicker)   ' Назначаем переменной ссылку на экземпляр диалога
+    With objFD                                                      ' Используем короткое обращение к объекту
+        .Title = o_strCaption                                       ' Заголовок окна диалога
+        .ButtonName = o_strButton                                   ' Надпись на кнопке
+        .Filters.Clear                                              ' Очищаем установленные ранее типы файлов
+        .InitialFileName = o_strFolder                              ' Нназначаем первую папку отображения
+        .InitialView = msoFileDialogViewLargeIcons                  ' Вид диалогового окна(доступно 9 вариантов)
+        If objFD.Show = 0 Then Exit Function                        ' Прерывание
+        strResult = .SelectedItems(1)                               ' Считываем путь к папке
+    End With
+
+    fn_Folder_Select = strResult                                    ' Присваеваем функции возвразаемое значение
+    
+' -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Folder_Select_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "fn_Folder_Select", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Автор:        Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Создано:      03.04.2020 14:58
+' Название:     fn_Code_Line
+' Описание:     Создание линии в коде
+' Тип:          Function
+' Доступ:       Public
+' Возвращает:   String
+' sPattern (String): Паттерн создания
+' lRepits (Long): Количество повторений
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Code_Line(Optional ByVal sPattern As String = " - +", _
+                             Optional ByVal lRepits As Long = 104) As String
+
+If Not DEBUGGING Then On Error GoTo fn_Code_Line_Error ' В случае ошибки перейти по метке
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Dim lIndex As Long
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    fn_Code_Line = "'"
+
+    Do
+
+        fn_Code_Line = fn_Code_Line & sPattern
+        lIndex = lIndex + Len(sPattern)
+
+    Loop While lIndex < lRepits
+    
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Exit Function ' Завершение работы
+
+fn_Code_Line_Error: ' Инструкции на случай ошибки
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "fn_Code_Line", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.12 17:16:20
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_Create_Folder
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Создать папку
+' Параметр:     strPath {String} - Путь к папке
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Create_Folder(ByVal strPath As String)
+
+If Not DEBUGGING Then On Error GoTo sc_Create_Folder_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objFSO As Object
+Dim varTemp As Variant
+Dim intI As Integer
+Dim strTemp As String
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+
+    varTemp = Split(strPath, "\")
+    strTemp = ""
+    
+    For intI = 0 To UBound(varTemp)
+        If varTemp(intI) <> "" Then
+            strTemp = strTemp & varTemp(intI) & "\"
+                If objFSO.FolderExists(strTemp) = False Then MkDir strTemp
+        End If
+    Next
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Create_Folder_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "sc_Create_Folder", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.12 10:50:11
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Month_Name
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Получить Русское название месяца по его номеру
+' Параметр:     bytMonth {Byte} - Номер месяца от 1 до 12
+' Вернёт:       String - Имя месяца
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Month_Name(ByVal bytMonth As Byte) As String
+
+If Not DEBUGGING Then On Error GoTo fn_Month_Name_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    ReDim strArray(1 To 12) As String
+          strArray(1) = "Январь"
+          strArray(2) = "Февраль"
+          strArray(3) = "Март"
+          strArray(4) = "Апрель"
+          strArray(5) = "Май"
+          strArray(6) = "Июнь"
+          strArray(7) = "Июль"
+          strArray(8) = "Август"
+          strArray(9) = "Сентябрь"
+          strArray(10) = "Октябрь"
+          strArray(11) = "Ноябрь"
+          strArray(12) = "Декабрь"
+          
+    fn_Month_Name = strArray(bytMonth)
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Month_Name_Error: ' Инструкции что делать при ошибке
+
+    fn_Month_Name = CStr(bytMonth)
+
+Err.Clear
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.12 10:37:28
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_Week_Day_Name
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Получить имя дня недели на русском по номеру
+' Параметр:     bytDay {Byte} - Номер дня недели от 1 до 7
+' Вернёт:       String - День недели
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Week_Day_Name(ByVal bytDay As Byte) As String
+
+If Not DEBUGGING Then On Error GoTo fn_Week_Day_Name_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    ReDim strArray(1 To 7) As String
+    strArray(1) = "Понедельник"
+    strArray(2) = "Вторник"
+    strArray(3) = "Среда"
+    strArray(4) = "Четверг"
+    strArray(5) = "Пятница"
+    strArray(6) = "Суббота"
+    strArray(7) = "Воскресенье"
+    
+    fn_Week_Day_Name = strArray(bytDay)
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_Week_Day_Name_Error: ' Инструкции что делать при ошибке
+
+    fn_Week_Day_Name = CStr(bytDay)
+
+Err.Clear
+
+End Function
+
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Автор:        Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Создано:      31.03.2020 07:33
+' Название:     fn_Unique_Values
+' Описание:     Выбрать из указаного диапазона уникальные значения
+' Тип:          Function
+' Доступ:       Public
+' Возвращает:   Variant()
+' objRange (Range): Диапазон из которого выбирать уникальные значения
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_Unique_Values(ByVal objRange As Range) As Variant()
+
+Dim vResult() As Variant
+Dim lIndex As Long
+Dim sText As String
+Dim vTemp As Variant
+    
+    vResult = Intersect(objRange.Parent.UsedRange, objRange).Value
+    
+    If Not DEBUGGING Then On Error Resume Next
+    
+    With New Collection
+    
+        For Each vTemp In vResult()
+        
+            If TypeName(vTemp) = "Boolean" Then vTemp = IIf(vTemp, "ИСТИНА", "ЛОЖЬ")
+        
+            sText = Trim(vTemp)
+            
+            If Len(sText) > 0 Then
+            
+              If IsEmpty(.Item(sText)) Then
+              
+                For lIndex = 1 To .Count
+                
+                  If sText < .Item(lIndex) Then Exit For
+                  
+                Next
+                
+                  If lIndex > .Count Then .Add sText, sText Else .Add sText, sText, Before:=lIndex
+                  
+              End If
+              
+            End If
+            
+        Next
+        
+        ReDim vResult(1 To .Count)
+        
+        For lIndex = 1 To .Count
+        
+            vResult(lIndex) = .Item(lIndex)
+            
+        Next
+        
+    End With
+
+    fn_Unique_Values = vResult
+    
+    Err.Clear
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.07 17:15:31
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_Clipboard_Send
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Отправить данные в буфер обмена
+' Параметр:     strText {String} - Текст отправляемый в буфер
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Clipboard_Send(ByVal strText As String)
+
+If Not DEBUGGING Then On Error GoTo sc_Clipboard_Send_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Dim objClip As Object
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Set objClip = GetObject("New:1C3B4210-F441-11CE-B9EA-00AA006B1A69")
+    objClip.SetText strText: objClip.PutInClipboard
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Clipboard_Send_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "sc_Clipboard_Send", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Sub
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.07 08:24:09
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     fn_File_Exists
+' Тип:          Function
+' Доступ:       Public
+' Описание:     Проверить существует ли файл
+' Параметр:     strFile {String} - Полное имя файла
+' Вернёт:       Boolean - True/False, в зависимости от того существует ли файл
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Function fn_File_Exists(ByVal strFile As String) As Boolean
+
+If Not DEBUGGING Then On Error GoTo fn_File_Exists_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    fn_File_Exists = Len(Dir(strFile)) > 0 ' Проверяем существует ли файл
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Function ' Завершение работы
+
+fn_File_Exists_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "fn_File_Exists", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Function
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.06 08:28:30
+' Создатель:    Шевченко Дмитрий <shevchenko104spb@gmail.com>
+' Название:     sc_Screen_Updating
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Включение/Отключение обновления экрана
+' Параметр:     booAct {Boolean} - Выполняемое действие. True - включить обновление. False - отключаем
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Screen_Updating(ByVal booAct As Boolean)
+
+If Not DEBUGGING Then On Error GoTo sc_Screen_Updating_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Application.ScreenUpdating = booAct
+    Application.ShowWindowsInTaskbar = booAct
+    Application.AskToUpdateLinks = booAct
+    Application.DisplayAlerts = booAct
+    Application.EnableEvents = booAct
+    Application.DisplayStatusBar = booAct
+    
+    If booAct Then
+    
+        Application.EnableCancelKey = xlInterrupt
+        Application.Calculation = xlCalculationAutomatic
+        Application.DisplayCommentIndicator = xlCommentAndIndicator
+        
+    Else
+    
+        Application.EnableCancelKey = xlDisabled
+        Application.Calculation = xlCalculationManual
+        Application.DisplayCommentIndicator = xlNoIndicator
+        
+    End If
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Screen_Updating_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, MODULENAME, "sc_Screen_Updating", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Sub
