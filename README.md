@@ -2,6 +2,7 @@
 Различные функции и скрипты для удобной работы
 
 Tools.fn_Add_Symbols - Увеличить строку до нужной длинны
+
 Tools.fn_Code_Line - Создание линии в коде
 Tools.fn_File_Exists - Проверить существует ли файл
 Tools.fn_Files_Names_Collection - Поиск в указанной папке файлов по маске
