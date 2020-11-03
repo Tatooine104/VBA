@@ -714,3 +714,35 @@ sc_Screen_Updating_Error: ' Инструкции что делать при ош
 Call Tools.sc_Error_Logger(Err, MODULENAME, "sc_Screen_Updating", MODULEVERSION)  ' Вызов обработчика ошибок
 
 End Sub
+
+
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+' Создано:      2020.04.12 16:54:08
+' Создатель:    Шевченко Дмитрий <dshevchenko@solvo.ru>
+' Название:     sc_Function_Description
+' Тип:          Sub
+' Доступ:       Public
+' Описание:     Создать описание для функции
+' Параметр:     strName {String} - Имя функции
+' Параметр:     strDescription {String} - Описание функции
+' Параметр:     varArguments {Variant} - Описание к аргумента
+' - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - +
+Public Sub sc_Function_Description(ByVal strName As String, _
+                                   ByVal strDescription As String, _
+                                   ByVal varArguments As Variant)
+
+If Not DEBUGGING Then On Error GoTo sc_Function_Description_Error ' При ошибке переход по метке
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+
+    Application.MacroOptions Macro:=strName, _
+                             Description:=strDescription, _
+                             ArgumentDescriptions:=varArguments
+
+' -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+Exit Sub ' Завершение работы
+
+sc_Function_Description_Error: ' Инструкции что делать при ошибке
+
+Call Tools.sc_Error_Logger(Err, "Shevchenko_AddIn", "sc_Function_Description", MODULEVERSION)  ' Вызов обработчика ошибок
+
+End Sub
